@@ -123,18 +123,21 @@ class _DriverShellState extends ConsumerState<DriverShell> {
                 TagBadge(label: s.balance, color: AppColors.primaryGold),
               ],
             ),
-            const SizedBox(height: 6),
-            Text('${w.balanceEtb} ETB',
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: AppColors.neutralDark)),
-            const SizedBox(height: 6),
-            KvRow(
-              k: s.codFloat,
-              v: '${w.floatEtb} / ${w.floatCap} ETB',
-              vColor: w.codBlocked ? AppColors.dangerRed : AppColors.neutralDark,
+            const SizedBox(height: 8),
+            KpiRow(
+              kpis: [
+                Kpi(label: s.balance, value: '${w.balanceEtb}'),
+                Kpi(
+                  label: s.codFloat,
+                  value: '${w.floatEtb}/${w.floatCap}',
+                  valueColor: w.codBlocked ? AppColors.dangerRed : AppColors.neutralDark,
+                ),
+                Kpi(label: s.payoutDue, value: '${w.payoutDue}'),
+              ],
             ),
             if (w.codBlocked)
               Container(
-                margin: const EdgeInsets.only(top: 6),
+                margin: const EdgeInsets.only(top: 8),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: AppColors.dangerRed.withValues(alpha: 0.1),
@@ -143,7 +146,6 @@ class _DriverShellState extends ConsumerState<DriverShell> {
                 child: Text(s.codBlockedNote,
                     style: const TextStyle(color: AppColors.dangerRed, fontWeight: FontWeight.w600, fontSize: 12)),
               ),
-            KvRow(k: s.payoutDue, v: '${w.payoutDue} ETB'),
           ],
         ),
       ),
