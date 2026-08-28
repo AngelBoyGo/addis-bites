@@ -12,6 +12,7 @@ import '../../providers/catalog_provider.dart';
 import '../../providers/orders_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/savings.dart';
+import '../../widgets/shared.dart';
 
 /// The Gebeta (shared platter) cart: line steppers, delivery-band selector,
 /// rain surge, buna-run tier, transparent fee breakdown.
@@ -35,8 +36,14 @@ class _CartScreenState extends ConsumerState<CartScreen> {
           title: Text('${s.cart} · ገበታ'),
           leading: IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back)),
         ),
-        body: Center(
-          child: Text(s.emptyCart, style: Theme.of(context).textTheme.titleMedium),
+        body: EmptyState(
+          icon: Icons.shopping_bag_outlined,
+          title: s.emptyCart,
+          subtitle: s.browseFood,
+          action: FilledButton(
+            onPressed: () => context.go('/'),
+            child: Text(s.browseFood),
+          ),
         ),
       );
     }

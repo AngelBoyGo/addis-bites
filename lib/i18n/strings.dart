@@ -75,6 +75,7 @@ class Strings {
   String get whyThisFee => t('Why this fee?', 'ይህ ክፍያ ለምን?');
   String get deliveredOnFoot => t('Delivered on foot', 'በእግር ተላልፏል');
   String get emptyCart => t('Your platter is empty', 'ገበታዎ ባዶ ነው');
+  String get browseFood => t('Browse food', 'ምግብ ይመልከቱ');
   String get deliveryBand => t('Delivery distance', 'የማድረስ ርቀት');
   String get deliverTo => t('Deliver to', 'ወደ ማድረስ');
   String get phone => t('Phone', 'ስልክ');
