@@ -1,0 +1,17 @@
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo",
+  "phone": "+251911000001",
+  "merchantId": "sheger-kitchen",
+  "items": [{
+    "itemId": "sk-doro-wot",
+    "qty": 2,
+    "injeraCount": 4,
+    "spice": 2
+  }],
+  "subCity": "Bole",
+  "sefer": "Bole Medhanealem",
+  "landmarkText": "Behind the yellow building, green gate",
+  "lat": 8.9888,
+  "lng": 38.7872,
+  "paymentMethod": "chapa"
+}

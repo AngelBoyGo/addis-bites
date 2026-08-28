@@ -1,0 +1,25 @@
+name = "addis-bites-worker"
+main = "src/index.js"
+compatibility_date = "2026-08-25"
+
+# ---- Production secrets (set via: wrangler secret put <NAME>) ----
+# AUTH_SECRET          HMAC key used to sign/verify JWTs issued at /join. When
+#                      set, ALL protected routes require a signed JWT and the
+#                      legacy demo-<phone> tokens are rejected.
+# CHAPA_WEBHOOK_SECRET  HMAC key used to verify POST /api/webhooks/chapa.
+# TELEBIRR_API_KEY      Enables real B2C payouts (otherwise simulated).
+# DEMO_WEBHOOK         Set to "1" (dev only) to accept a known demo secret for
+#                      the webhook so the offline harness can exercise it.
+
+# ---- D1 database binding ----
+# Provision before first deploy:
+#   wrangler d1 create addis-bites-db
+#   wrangler d1 execute addis-bites-db --file=./schema.sql
+# then set database_id below. The worker also self-migrates via ensureSchema().
+[[d1_databases]]
+binding = "DB"
+database_name = "addis-bites-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+ENVIRONMENT = "local-harness"

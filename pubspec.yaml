@@ -1,0 +1,61 @@
+name: addis_bites
+description: "Addis Bites (አዲስ ባይትስ) - a landmark-based, fasting-calendar-aware food delivery app for Addis Ababa."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management (one pattern project-wide)
+  flutter_riverpod: ^2.5.1
+
+  # Routing with role-guarded redirects
+  go_router: ^14.2.0
+
+  # HTTP + local storage
+  dio: ^5.4.3
+  http: ^1.2.1
+  shared_preferences: ^2.2.3
+  flutter_secure_storage: ^9.1.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.4
+
+  # Maps (OSM)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.0
+
+  # Verified-receipt QR codes
+  qr_flutter: ^4.1.0
+
+  # Deep links / tel: / sms: / Chapa hosted checkout
+  url_launcher: ^6.3.0
+
+  # Camera for menu-photo upload + driver proof-of-delivery photos
+  image_picker: ^1.1.2
+
+  intl: ^0.20.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  # Drop Inter + Noto Sans Ethiopic .ttf files under assets/fonts/ and uncomment
+  # the block below to enable the bundled fonts. Without them the app uses the
+  # system font stack, which still renders Amharic on Android.
+  # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
+  #   - family: NotoSansEthiopic
+  #     fonts:
+  #       - asset: assets/fonts/NotoSansEthiopic-Regular.ttf

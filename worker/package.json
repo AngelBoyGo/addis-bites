@@ -1,0 +1,13 @@
+{
+  "name": "addis-bites-worker",
+  "version": "1.0.0",
+  "description": "Local Cloudflare Worker mock harness serving Addis Bites §4 REST API contract",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "start": "wrangler dev --port 8787"
+  },
+  "devDependencies": {
+    "wrangler": "^3.100.0"
+  }
+}

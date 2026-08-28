@@ -1,0 +1,71 @@
+{
+  "merchants": [{
+    "id": "sheger-kitchen",
+    "nameAm": "ሸገር ኩሽና",
+    "nameEn": "Sheger Kitchen",
+    "sefer": "Bole Medhanealem",
+    "subCity": "Bole",
+    "lat": 8.9888,
+    "lng": 38.7872,
+    "phoneGsm": "+251 911 224 410",
+    "prepMin": 28,
+    "rating": 4.7,
+    "tsomCertified": true,
+    "halalCertified": false,
+    "thermal": true,
+    "acceptsCash": true,
+    "acceptsChapa": true,
+    "isRestaurantOfTheDay": true,
+    "accent": "#C84B20"
+  }],
+  "menu": [{
+    "id": "sk-doro-wot",
+    "merchantId": "sheger-kitchen",
+    "nameAm": "ዶሮ ወጥ",
+    "nameEn": "Doro Wot",
+    "priceEtb": 420,
+    "category": "Meat Wots",
+    "isTsom": false,
+    "isHalal": false,
+    "isRawMeat": false,
+    "isAvailable": true,
+    "injeraStepper": true,
+    "spiceLevels": 3,
+    "source": "manual"
+  }],
+  "config": {
+    "serviceFee": 20,
+    "deliveryFee2km": 80,
+    "deliveryFee5km": 150,
+    "deliveryFee8km": 240,
+    "rainSurge": 40,
+    "bunaRunFee": 50,
+    "bunaMaxOrder": 150,
+    "bunaMaxKm": 1,
+    "courierSharePct": 80,
+    "courierTipsPct": 100,
+    "codFloatCap": 1500,
+    "codSettlementHours": 24,
+    "commissionPct": 12,
+    "restaurantOfTheDayCommissionPct": 0,
+    "smsProvider": "afromessage",
+    "smsCostEtb": 0.45,
+    "ackTimeoutSeconds": 90,
+    "rainMode": false,
+    "fastingOverride": false,
+    "restaurantOfTheDayId": "sheger-kitchen",
+    "inflationPct": 22,
+    "feeMultiplier": 1.0
+  },
+  "fasting": {
+    "active": false,
+    "labelEn": "",
+    "labelAm": "",
+    "weekly": false
+  },
+  "subCities": [{
+    "id": "bole",
+    "nameEn": "Bole",
+    "nameAm": "ቦሌ"
+  }]
+}

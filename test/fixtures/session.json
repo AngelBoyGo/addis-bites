@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo",
+  "profile": {
+    "id": "p-1001",
+    "phone": "+251911000001",
+    "name": "Abebe Bikila",
+    "role": "customer",
+    "vehicle": "motorbike"
+  }
+}

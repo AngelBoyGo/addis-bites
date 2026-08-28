@@ -1,0 +1,14 @@
+{
+  "orderId": "ord-20260825-001",
+  "merchant": "Sheger Kitchen",
+  "sefer": "Bole Medhanealem",
+  "distanceKm": 1.2,
+  "grossFee": 80,
+  "keeperShare": 64,
+  "fuelCost": 10,
+  "net": 54,
+  "subsidy": 0,
+  "tipsEtb": 12,
+  "etaMin": 15,
+  "footEligible": true
+}

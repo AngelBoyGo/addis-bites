@@ -1,0 +1,11 @@
+{
+  "request": {
+    "ok": true,
+    "provider": "demo",
+    "demoCode": "123456"
+  },
+  "verify": {
+    "ok": true,
+    "phone": "+251911000001"
+  }
+}
