@@ -7,6 +7,7 @@ import '../models/menu.dart';
 import '../models/merchant.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
+import 'shared.dart';
 
 /// Converts a hex accent string (e.g. "#C84B20") to a [Color].
 Color hexColor(String? hex, {Color fallback = AppColors.secondaryClay}) {
@@ -151,60 +152,70 @@ class MenuItemTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final txt = Theme.of(context).textTheme;
     final dataSaver = ref.watch(dataSaverProvider);
+    final s = StringsScope.of(context);
+    final disabled = !item.isAvailable;
     return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!dataSaver)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  color: item.isTsom
-                      ? AppColors.tsomGreen.withValues(alpha: 0.15)
-                      : AppColors.secondaryClay.withValues(alpha: 0.12),
-                  child: item.photoWebpUrl != null && item.photoWebpUrl!.isNotEmpty
-                      ? Image.network(
-                          item.photoWebpUrl!,
-                          fit: BoxFit.cover,
-                          width: 56,
-                          height: 56,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.rice_bowl, color: AppColors.neutralMid, size: 26),
-                        )
-                      : const Center(child: Icon(Icons.rice_bowl, color: AppColors.neutralMid, size: 26)),
+      onTap: disabled ? null : onTap,
+      child: Opacity(
+        opacity: disabled ? 0.6 : 1,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!dataSaver)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    color: item.isTsom
+                        ? AppColors.tsomGreen.withValues(alpha: 0.15)
+                        : AppColors.secondaryClay.withValues(alpha: 0.12),
+                    child: item.photoWebpUrl != null && item.photoWebpUrl!.isNotEmpty
+                        ? Image.network(
+                            item.photoWebpUrl!,
+                            fit: BoxFit.cover,
+                            width: 56,
+                            height: 56,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.rice_bowl, color: AppColors.neutralMid, size: 26),
+                          )
+                        : const Center(child: Icon(Icons.rice_bowl, color: AppColors.neutralMid, size: 26)),
+                  ),
+                ),
+              if (!dataSaver) const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.nameEn, style: txt.titleSmall),
+                    Text(item.nameAm, style: txt.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 4),
+                    Wrap(spacing: 6, runSpacing: 4, children: _itemChips),
+                  ],
                 ),
               ),
-            if (!dataSaver) const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(item.nameEn, style: txt.titleSmall),
-                  Text(item.nameAm, style: txt.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 4),
-                  Wrap(spacing: 6, runSpacing: 4, children: _itemChips),
+                  Text('${item.priceEtb} ETB',
+                      style: txt.titleMedium?.copyWith(
+                          color: disabled ? AppColors.neutralMid : AppColors.secondaryClay,
+                          fontWeight: FontWeight.w700,
+                          decoration: disabled ? TextDecoration.lineThrough : null)),
+                  const SizedBox(height: 6),
+                  if (disabled)
+                    TagBadge(label: s.soldOut, color: AppColors.neutralMid)
+                  else
+                    const CircleAvatar(
+                      radius: 16,
+                      backgroundColor: AppColors.primaryGold,
+                      child: Icon(Icons.add, size: 18, color: AppColors.neutralDark),
+                    ),
                 ],
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('${item.priceEtb} ETB',
-                    style: txt.titleMedium?.copyWith(
-                        color: AppColors.secondaryClay, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 6),
-                const CircleAvatar(
-                  radius: 16,
-                  backgroundColor: AppColors.primaryGold,
-                  child: Icon(Icons.add, size: 18, color: AppColors.neutralDark),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
