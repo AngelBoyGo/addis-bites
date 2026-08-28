@@ -245,6 +245,7 @@ class Strings {
   String get moreNeighborSaved => t('1 more neighbor = −8 ETB', 'ተጨማሪ ጎረቤት = −8 ብር');
   String get roundsArriveWindow => t('Batched orders arrive within the round window.', 'ዙር ጊዜ ውስጥ ይደርሳል');
   String get priceLockNote => t('Locked total — pay exactly this. Collecting more is grounds for removal.', 'ቋሚ ጠቅላላ — ይህን በትክክል ይክፈሉ');
+  String get deliveryGuaranteeNote => t('On-time guaranteed: >30 min late → delivery fee refunded automatically.', 'ውርስ የተረጋገጠ፡ ከ30 ደቂቃ ካለፈ → የማጓጓዣ ክፍያ በራሱ ይመለሳል።');
 
   /// §11.3 driver-side price lock: identical locked total to collect.
   String collectExactly(int totalEtb) => t(

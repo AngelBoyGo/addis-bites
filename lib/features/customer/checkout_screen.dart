@@ -125,6 +125,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           _summary(context, s, subtotal, delivery, cfg, surge, savingsTotal, estimate),
           const SizedBox(height: 8),
           Text(s.priceLockNote, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(Icons.verified, size: 16, color: AppColors.tsomGreen),
+              const SizedBox(width: 6),
+              Expanded(child: Text(s.deliveryGuaranteeNote, style: Theme.of(context).textTheme.bodySmall)),
+            ],
+          ),
         ],
       ),
       bottomNavigationBar: SafeArea(
