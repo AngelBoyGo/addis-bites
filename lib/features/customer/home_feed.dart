@@ -342,17 +342,18 @@ class _HomeFeedState extends ConsumerState<HomeFeed> {
 
   Widget _empty(BuildContext context) {
     final s = StringsScope.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          children: [
-            const Icon(Icons.search_off, size: 56, color: AppColors.neutralMid),
-            const SizedBox(height: 12),
-            Text(s.noResults, style: Theme.of(context).textTheme.titleMedium),
-          ],
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: 320,
+          child: EmptyState(
+            icon: Icons.search_off,
+            title: s.noResults,
+            subtitle: s.tryClearFilters,
+          ),
         ),
-      ),
+      ],
     );
   }
 

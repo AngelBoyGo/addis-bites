@@ -16,8 +16,8 @@ final catalogProvider =
     StateNotifierProvider<CatalogNotifier, AsyncValue<CatalogResponse>>((ref) => CatalogNotifier(ref));
 
 class CatalogNotifier extends StateNotifier<AsyncValue<CatalogResponse>> {
-  CatalogNotifier(this._ref) : super(const AsyncValue.loading()) {
-    _hydrate();
+  CatalogNotifier(this._ref, {bool hydrate = true}) : super(const AsyncValue.loading()) {
+    if (hydrate) _hydrate();
   }
 
   final Ref _ref;

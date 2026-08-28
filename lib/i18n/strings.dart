@@ -47,6 +47,7 @@ class Strings {
   String get restaurants => t('Restaurants', 'ሬስቶራንቶች');
   String get menuItems => t('Menu items', 'የምግብ ዝርዝር');
   String get noResults => t('No results', 'ምንም ውጤት የለም');
+  String get tryClearFilters => t('Try clearing your search or filters', 'ማጣሪያዎችን ያጽዱ');
   String get fastingModeActive => t('Fasting Mode Active', 'የጾም ቀን');
   String get showAll => t('Show all', 'ሁሉንም ያሳዩ');
   String get showFastingFriendly => t('Show fasting-friendly', 'የጾም ወዳጃዊ ያሳዩ');
