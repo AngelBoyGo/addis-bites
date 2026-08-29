@@ -89,6 +89,20 @@ class _MerchantShellState extends ConsumerState<MerchantShell> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const SizedBox(height: 4),
+          KpiRow(
+            kpis: [
+              Kpi(label: s.liveQueue, value: '${queue.valueOrNull?.length ?? 0}'),
+              Kpi(label: s.menuAvailability, value: '${catalog?.items.length ?? 0}'),
+              Kpi(
+                label: s.pendingActions,
+                value: '${ref.read(merchantQueueProvider.notifier).pendingActions.length}',
+                valueColor: ref.read(merchantQueueProvider.notifier).pendingActions.isNotEmpty
+                    ? AppColors.surfaceGround
+                    : AppColors.neutralDark,
+              ),
+            ],
+          ),
           if (ref.read(merchantQueueProvider.notifier).pendingActions.isNotEmpty)
             Container(
               margin: const EdgeInsets.only(bottom: 8),
@@ -155,6 +169,8 @@ class _MerchantShellState extends ConsumerState<MerchantShell> {
                 Expanded(
                   child: Text('#${o.id}', style: Theme.of(context).textTheme.titleSmall),
                 ),
+                StatusPill(status: o.status.wire),
+                const SizedBox(width: 6),
                 TagBadge(
                   label: o.paymentMethod == 'chapa' ? s.verified : s.codPending,
                   color: o.paymentMethod == 'chapa' ? AppColors.tsomGreen : AppColors.surfaceGround,
