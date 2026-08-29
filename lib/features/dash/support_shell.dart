@@ -55,29 +55,16 @@ class _SupportShellState extends ConsumerState<SupportShell> {
   }
 
   Widget _kpis(BuildContext context, SupportDashboard d) {
-    return Row(
-      children: [
-        _kpi(context, 'Open reports', '${d.reports.where((r) => r.status == 'open').length}'),
-        _kpi(context, 'Strikes', '${d.strikes.length}'),
-        _kpi(context, 'Refunds', '${d.refunds.length}'),
-        _kpi(context, '1st resp', '${d.firstResponseMin} min'),
+    final open = d.reports.where((r) => r.status == 'open').length;
+    return KpiRow(
+      kpis: [
+        Kpi(label: 'Open reports', value: '$open'),
+        Kpi(label: 'Strikes', value: '${d.strikes.length}'),
+        Kpi(label: 'Refunds', value: '${d.refunds.length}'),
+        Kpi(label: '1st resp', value: '${d.firstResponseMin} min'),
       ],
     );
   }
-
-  Widget _kpi(BuildContext context, String label, String value) => Expanded(
-    child: Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(children: [
-          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.neutralDark)),
-          Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
-        ]),
-      ),
-    ),
-  );
 
   Widget _reports(BuildContext context, Strings s, List<MisconductReport> reports) {
     if (reports.isEmpty) return Text(s.noOffers);
@@ -92,12 +79,14 @@ class _SupportShellState extends ConsumerState<SupportShell> {
               children: [
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('${r.id} · ${r.category} · ${r.status}',
+                    Text('${r.id} · ${r.category}',
                         style: Theme.of(context).textTheme.titleSmall),
                     Text('${r.reporterType} → ${r.subjectType} ${r.subjectId} · ${r.orderId}',
                         style: Theme.of(context).textTheme.bodySmall),
                   ]),
                 ),
+                StatusPill(status: r.status),
+                SizedBox(width: 6),
                 if (r.status == 'open') ...[
                   IconButton(
                     onPressed: () => ref.read(supportProvider.notifier).validateReport(r.id, true),
@@ -141,7 +130,7 @@ class _SupportShellState extends ConsumerState<SupportShell> {
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             title: Text('${r.id} · ${r.orderId} · ${r.amountEtb} ETB · ${r.status}'),
-            subtitle: Text('Admin approval required'),
+            subtitle: Row(children: [StatusPill(status: r.status), const SizedBox(width: 6), const Flexible(child: Text('Admin approval required'))]),
             trailing: r.status == 'requested'
                 ? TextButton(
                     onPressed: () => ref.read(supportProvider.notifier).approveRefund(r.id),

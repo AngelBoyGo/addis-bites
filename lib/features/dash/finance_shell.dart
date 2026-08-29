@@ -52,29 +52,17 @@ class _FinanceShellState extends ConsumerState<FinanceShell> {
   }
 
   Widget _kpis(BuildContext context, FinanceDashboard d) {
-    return Row(
-      children: [
-        _kpi(context, 'Ledger Δ', '${d.ledgerImbalance}', d.ledgerImbalance == 0 ? AppColors.tsomGreen : AppColors.dangerRed),
-        _kpi(context, 'Unreconciled', '${d.unreconciled24h}', AppColors.tsomGreen),
-        _kpi(context, 'Payout failures', '${d.payoutFailureCount}', AppColors.tsomGreen),
-        _kpi(context, 'Take rate', '${d.takeRateNetPromos}%', AppColors.neutralDark),
+    return KpiRow(
+      kpis: [
+        Kpi(label: 'Ledger Δ', value: '${d.ledgerImbalance}'),
+        Kpi(label: 'Unreconciled', value: '${d.unreconciled24h}'),
+        Kpi(label: 'Payout failures', value: '${d.payoutFailureCount}'),
+        Kpi(label: 'Take rate', value: '${d.takeRateNetPromos}%'),
       ],
     );
   }
 
-  Widget _kpi(BuildContext context, String label, String value, Color color) => Expanded(
-    child: Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(children: [
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
-          Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
-        ]),
-      ),
-    ),
-  );
+  
 
   Widget _batches(BuildContext context, Strings s, List<PayoutBatch> batches) {
     if (batches.isEmpty) return Text(s.noOffers);
@@ -86,7 +74,7 @@ class _FinanceShellState extends ConsumerState<FinanceShell> {
           child: ListTile(
             leading: const Icon(Icons.account_balance, color: AppColors.primaryGold),
             title: Text('${b.id} · ${b.method} · ${b.totalEtb} ETB (${b.count})'),
-            subtitle: Text('${b.status} · 10:00/13:00/18:00 EAT · two-person release'),
+            subtitle: Row(children: [StatusPill(status: b.status), const SizedBox(width: 6), Expanded(child: Text('10:00/13:00/18:00 EAT · two-person release'))]),
             trailing: b.status == 'pending'
                 ? TextButton(
                     onPressed: () => ref.read(financeProvider.notifier).runPayoutBatch(b.id),
