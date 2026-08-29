@@ -182,8 +182,14 @@ class _CarrierScreenState extends ConsumerState<CarrierScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('$balance ETB', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900), key: ValueKey('carrier-balance')),
-                        Text('Radius: ${f.radiusKm} km · ${f.earningToday ? 'Earning today' : 'Inactive'}',
-                            style: Theme.of(context).textTheme.bodySmall),
+                        const SizedBox(height: 8),
+                        KpiRow(
+                          kpis: [
+                            Kpi(label: s.balance, value: '$balance'),
+                            Kpi(label: s.radius, value: '${f.radiusKm} km'),
+                            Kpi(label: f.earningToday ? s.earningToday : s.inactive, value: f.earningToday ? '✓' : '○'),
+                          ],
+                        ),
                       ],
                     );
                   },
