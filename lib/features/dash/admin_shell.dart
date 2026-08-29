@@ -70,30 +70,12 @@ class _AdminShellState extends ConsumerState<AdminShell> {
   }
 
   Widget _kpis(BuildContext context, Strings s, AdminSnapshot a) {
-    return Row(
-      children: [
-        _kpi(context, s.ordersToday, '${a.ordersToday}'),
-        _kpi(context, s.gmv, '${a.gmvEtb} ETB'),
-        _kpi(context, s.activeCouriers, '${a.activeCouriers}'),
+    return KpiRow(
+      kpis: [
+        Kpi(label: s.ordersToday, value: '${a.ordersToday}'),
+        Kpi(label: s.gmv, value: '${a.gmvEtb} ETB'),
+        Kpi(label: s.activeCouriers, value: '${a.activeCouriers}'),
       ],
-    );
-  }
-
-  Widget _kpi(BuildContext context, String label, String value) {
-    return Expanded(
-      child: Card(
-        elevation: 0,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.neutralDark)),
-              Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
