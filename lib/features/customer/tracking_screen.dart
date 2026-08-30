@@ -274,6 +274,7 @@ Widget _eta(BuildContext context, Strings s, Order order) {
     final phone = order.courierPhone?.replaceAll(RegExp(r'[^0-9+]'), '') ?? '';
     if (phone.isEmpty) return;
     await launchUri(context, 'sms:$phone');
+    ref.read(ordersProvider.notifier).upsert(order.copyWith(smsFallbackSent: true));
   }
 
   Widget _deliveryInfo(BuildContext context, Order order) {
