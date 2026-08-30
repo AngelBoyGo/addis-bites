@@ -1,6 +1,7 @@
 name = "addis-bites-worker"
 main = "src/index.js"
 compatibility_date = "2026-08-25"
+workers_dev = true
 
 # ---- Production secrets (set via: wrangler secret put <NAME>) ----
 # AUTH_SECRET          HMAC key used to sign/verify JWTs issued at /join. When
@@ -22,4 +23,4 @@ database_name = "addis-bites-db"
 database_id = "28ea87d2-b8dd-4cdb-aa86-1b1e5936673d"
 
 [vars]
-ENVIRONMENT = "local-harness"
+ENVIRONMENT = "production"

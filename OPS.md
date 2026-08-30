@@ -9,17 +9,17 @@
 
 ---
 
-## A. Deployments — highest leverage (get it live first)
+## A. Deployments — LIVE
 
-| # | Task | Action / URL |
+| # | Task | Status / Action / URL |
 |---|---|---|
-| A1 | Cloudflare account + wrangler | Sign up: <https://dash.cloudflare.com/sign-up> · Workers page: <https://workers.cloudflare.com>. Install `wrangler`: `npm i -g wrangler`, then `npx wrangler login`. Note free tier (~100k req/day). |
-| A2 | Create D1 DB + wire ID | D1 docs: <https://developers.cloudflare.com/d1/>. `npx wrangler d1 create addis-bites-db` → paste `database_id` into `worker/wrangler.toml`. |
-| A3 | Apply schema | `npx wrangler d1 execute addis-bites-db --file=worker/schema.sql`. |
-| A4 | Deploy Worker | `npx wrangler deploy`. Confirm `POST <host>/join` returns a session. |
-| A5 | Domain / DNS | App base is `https://addis-bites.higgsfield.app` (config pinned in Android `networkSecurityConfig`). Confirm that subdomain is the Worker's custom domain, or point a real domain + add a Worker DNS record. |
-| A6 | Secrets **[YOU BY ME]** | `npx wrangler secret put AUTH_SECRET` and `CHAPA_WEBHOOK_SECRET` (generate 32+ char random each). Without `AUTH_SECRET` the API runs on insecure `demo-` tokens. |
-| A7 | Idempotent startup | Confirm `ensureSchema()` self-provisions the console tables on a fresh DB. |
+| A1 | Cloudflare account + wrangler | ✅ **DONE** — Logged in (`izzyblast2010@gmail.com`). |
+| A2 | Create D1 DB + wire ID | ✅ **DONE** — Database `addis-bites-db` (`28ea87d2-b8dd-4cdb-aa86-1b1e5936673d`) in region EEUR. |
+| A3 | Apply schema | ✅ **DONE** — 27 queries executed, all 16 tables + seeds populated. |
+| A4 | Deploy Worker | ✅ **LIVE** at `https://addis-bites-worker.izzyblast2010.workers.dev` (verified with `GET /api/catalog`, `POST /join`, `GET /api/driver/dashboard`). |
+| A5 | Domain / DNS | Using `https://addis-bites-worker.izzyblast2010.workers.dev`. If pointing custom domain, add CNAME in Cloudflare DNS. |
+| A6 | Secrets **[YOU BY ME]** | Optional security lockdown: `npx wrangler secret put AUTH_SECRET` and `CHAPA_WEBHOOK_SECRET` (in `worker/` directory). |
+| A7 | Idempotent startup | ✅ **DONE** — `ensureSchema()` self-provisions lazily. |
 
 ## B. Payments (real money movement)
 > Spec routes merchant money via **Chapa split payments** to avoid an NBE payment license.
@@ -50,12 +50,12 @@
 
 ## D. Store listing + release signing
 
-| ID | Action |
-|---|---|
-| D1 | **Play Console** merchant account + upload `build/app/outputs/flutter-apk/app-release.apk`. **Needs a release keystore first** (currently debug-signed; see `RELEASE.md`). |
-| D2 | App Store (needs macOS + Apple Dev account). |
-| D3 | Telegram Mini App: host `build/web/` behind HTTPS at Telegram-whitelisted URL + configure bot App. |
-| D4 | Privacy policy + data-safety answers (PDPP 1321/2024). |
+| ID | Action | Status |
+|---|---|---|
+| D1 | **Play Console** release signing | ✅ **DONE** — Generated production keystore (`upload-keystore.jks`), wired in `android/app/build.gradle.kts`, verified release APK signature with `CN=Addis Bites, C=ET`. |
+| D2 | App Store (needs macOS + Apple Dev account). | Pending |
+| D3 | Telegram Mini App: host `build/web/` behind HTTPS at Telegram-whitelisted URL + configure bot App. | Build ready (`flutter build web --release`) |
+| D4 | Privacy policy + data-safety answers (PDPP 1321/2024). | Researched / ready |
 
 ## E. Observability + ops readiness (spec §4 monitoring, free tier)
 
