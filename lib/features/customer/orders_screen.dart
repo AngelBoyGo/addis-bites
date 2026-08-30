@@ -67,6 +67,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
   Widget build(BuildContext context) {
     final s = StringsScope.of(context);
     final sessionOrders = ref.watch(ordersProvider);
+    final pendingCount = ref.watch(ordersPendingProvider);
 
     // Deduplicate by id; prefer the freshest (manual lookup results first).
     final seen = <String>{};
@@ -101,7 +102,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
           ),
           const SizedBox(height: 12),
           // §3 offline retry queue: surface pending queued submissions with a manual Retry.
-          if (ref.read(ordersProvider.notifier).pending.isNotEmpty)
+          if (pendingCount > 0)
             Card(
               elevation: 0,
               margin: const EdgeInsets.only(bottom: 12),

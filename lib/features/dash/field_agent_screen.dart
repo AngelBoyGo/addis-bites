@@ -107,8 +107,8 @@ class _FieldAgentScreenState extends ConsumerState<FieldAgentScreen> {
           Padding(
             padding: const EdgeInsets.all(12),
             child: FilledButton(
-              onPressed: (_menuShot && _storeShot && _pinConfirmed && _payCaptured)
-                  ? () => setState(() => _verified = !_verified)
+              onPressed: (_menuShot && _storeShot && _pinConfirmed && _payCaptured && !_verified)
+                  ? () => setState(() => _verified = true)
                   : null,
               child: Text(_verified ? 'VERIFIED — submitted' : s.verifyMerchant,
                   style: const TextStyle(fontWeight: FontWeight.w700)),

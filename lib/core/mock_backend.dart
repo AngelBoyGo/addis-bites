@@ -253,6 +253,10 @@ Order _advance(Order o) {
     // §5.8b: during curfew, motorbike dispatch is suppressed — only foot/bicycle
     // (zero-fuel short) offers remain eligible.
     final visible = curfew ? offers.where((o) => o.footEligible).toList() : offers;
+    // §11.3 price lock: surface the locked collect-on-arrival total of the
+    // driver's active pickup (first placed order) so the driver collects the
+    // identical amount the customer locked — never a hardcoded constant.
+    final activeTotal = placed.isNotEmpty ? placed.first.total : null;
     return DriverDashboard(
       wallet: const DriverWallet(balanceEtb: 640, floatEtb: 1200, floatCap: 1500, payoutDue: 0),
       econByVehicle: const [
@@ -263,6 +267,7 @@ Order _advance(Order o) {
       ],
       offers: visible,
       curfewActive: curfew,
+      activeOrderTotalEtb: activeTotal,
     );
   }
 

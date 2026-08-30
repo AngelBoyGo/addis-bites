@@ -1111,7 +1111,10 @@ export default {
           floatCap: 1500,
           payoutDue: 0,
           curfewActive: false,
-          offers
+          offers,
+          // §11.3 price lock: locked collect-on-arrival total of the driver's
+          // active pickup (first eligible order), else null when none exists.
+          activeOrderTotalEtb: pooled.length ? pooled[0].total : null
         }), { headers: corsHeaders });
       }
 

@@ -234,6 +234,11 @@ class _DriverShellState extends ConsumerState<DriverShell> {
   }
 
   Widget _activeOrderCard(BuildContext context, Strings s, DriverDashboard d) {
+    // §11.3 Price Lock mirrored on the driver side: render only when there is a
+    // real active pickup, and collect the locked total the customer paid —
+    // never a hardcoded demo constant.
+    final collect = d.activeOrderTotalEtb;
+    final hasActive = collect != null && collect > 0;
     return Card(
       elevation: 0,
       child: Padding(
@@ -241,30 +246,33 @@ class _DriverShellState extends ConsumerState<DriverShell> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(s.assignedOrdersPending, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 10),
-            // §11.3 Price Lock mirrored on the driver side: the driver must see
-            // the identical locked total to collect.
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.primaryGold),
-              ),
-              child: Text(
-                s.collectExactly(940), // mirrors the order's locked total
-                style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.neutralDark),
-              ),
+            Text(
+              hasActive ? s.activeOrder : s.noActiveOrder,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: () {
-                _showPODSheet(context, s);
-              },
-              icon: const Icon(Icons.photo_camera),
-              label: Text(s.proofOfDelivery),
-            ),
+            if (hasActive) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.primaryGold),
+                ),
+                child: Text(
+                  s.collectExactly(collect),
+                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.neutralDark),
+                ),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () {
+                  _showPODSheet(context, s);
+                },
+                icon: const Icon(Icons.photo_camera),
+                label: Text(s.proofOfDelivery),
+              ),
+            ],
           ],
         ),
       ),

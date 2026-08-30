@@ -61,6 +61,7 @@ class Cart {
   final bool digitalPayDiscount; // Chapa/Telebirr → −8 ETB
 
   int get subtotal => lines.fold(0, (s, l) => s + l.lineTotal);
+  int get totalQty => lines.fold(0, (s, l) => s + l.qty);
   bool get isEmpty => lines.isEmpty;
 
   Cart withLine(CartLine line) {

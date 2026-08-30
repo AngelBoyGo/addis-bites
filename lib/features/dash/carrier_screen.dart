@@ -37,16 +37,19 @@ class _CarrierScreenState extends ConsumerState<CarrierScreen> {
     final session = ref.read(sessionProvider);
     final phone = session?.profile.phone ?? '+251911000001';
     await ref.read(footProvider.notifier).start(phone);
+    if (!mounted) return;
     setState(() => _step = 1);
   }
 
   Future<void> _orientation() async {
     await ref.read(footProvider.notifier).orientation();
+    if (!mounted) return;
     setState(() => _step = 2);
   }
 
   Future<void> _earnToday() async {
     await ref.read(footProvider.notifier).earnToday();
+    if (!mounted) return;
     setState(() => _step = 3);
   }
 
@@ -239,17 +242,24 @@ class _CarrierScreenState extends ConsumerState<CarrierScreen> {
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: () async {
-            // §5.9: mark delivered with POD — delivered stays reachable and the
-            // first-trip bonus (+100 ETB) releases once this is recorded.
+            // §5.9: record the delivered trip with POD. The first-trip bonus is
+            // released server-side when the trip is confirmed; surface the REAL
+            // earnings state (not a hardcoded "+100 released").
             await ref.read(driverDashboardProvider.notifier).submitPOD(
               const ProofOfDelivery(orderId: 'ord-demo-1', photoB64: 'demo', pin: '0000'),
             );
             ref.invalidate(footEarningsProvider);
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Delivered — first-trip bonus released (+100 ETB)')),
-              );
-            }
+            if (!mounted) return;
+            final e = ref.read(footEarningsProvider).valueOrNull;
+            final firstTrip = e?.bonuses.where((b) => b.kind == 'first_trip').firstOrNull;
+            final released = firstTrip != null && firstTrip.status == 'released';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(released
+                    ? 'Delivered — first-trip bonus released (+100 ETB)'
+                    : 'Trip recorded — first-trip bonus remains ${firstTrip?.status ?? 'pending'}'),
+              ),
+            );
           },
           icon: const Icon(Icons.check_circle_outline),
           label: const Text('Mark delivered'),

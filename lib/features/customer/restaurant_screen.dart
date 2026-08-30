@@ -80,7 +80,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> {
                     _configuringItem = item;
                     _qty = 1;
                     _injera = item.hasInjeraStepper ? 1 : 0;
-                    _spice = item.spiceLevels > 0 ? 1 : 0;
+                    _spice = 0; // first (always-present) level
                   })),
               ],
             ],

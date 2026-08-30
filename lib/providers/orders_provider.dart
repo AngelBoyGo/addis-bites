@@ -16,6 +16,17 @@ final ordersProvider = StateNotifierProvider<OrdersNotifier, List<Order>>(
   (ref) => OrdersNotifier(ref),
 );
 
+/// Reactive count of offline-queued order submissions. Updated whenever the
+/// queue mutates so the orders screen banner rebuilds without stale reads.
+final ordersPendingProvider = StateNotifierProvider<OrdersPendingNotifier, int>(
+  (ref) => OrdersPendingNotifier(),
+);
+
+class OrdersPendingNotifier extends StateNotifier<int> {
+  OrdersPendingNotifier() : super(0);
+  void setCount(int n) => state = n;
+}
+
 class OrdersNotifier extends StateNotifier<List<Order>> {
   OrdersNotifier(this._ref) : super(const []) {
     _restoreQueue();
@@ -82,7 +93,12 @@ class OrdersNotifier extends StateNotifier<List<Order>> {
 
   void enqueue(PendingOrder pending) {
     _queue.add(pending);
+    _syncPending();
     _drain();
+  }
+
+  void _syncPending() {
+    _ref.read(ordersPendingProvider.notifier).setCount(_queue.length);
   }
 
   Future<void> _drain() async {
@@ -106,6 +122,7 @@ class OrdersNotifier extends StateNotifier<List<Order>> {
         );
         _queue.removeAt(0);
         upsert(order);
+        _syncPending();
         _persistQueue();
         return;
       } catch (_) {
@@ -136,6 +153,7 @@ class OrdersNotifier extends StateNotifier<List<Order>> {
       if (raw == null || raw.isEmpty) return;
       final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
       _queue.addAll(list.map(PendingOrder.fromJson));
+      _syncPending();
       if (_queue.isNotEmpty) _drain();
     } catch (_) {
       _queue.clear();

@@ -103,12 +103,18 @@ class DriverDashboard {
     required this.econByVehicle,
     required this.offers,
     required this.curfewActive,
+    this.activeOrderTotalEtb,
   });
 
   final DriverWallet wallet;
   final List<VehicleEconomics> econByVehicle;
   final List<DriverOffer> offers;
   final bool curfewActive;
+
+  /// Locked collect-on-arrival total of the driver's active (assigned, not yet
+  /// POD'd) order, when one exists. Null means "no active pickup to collect".
+  /// §11.3 price lock: driver must see the identical total the customer locked.
+  final int? activeOrderTotalEtb;
 
   factory DriverDashboard.fromJson(Map<String, dynamic> json) => DriverDashboard(
     wallet: DriverWallet(
@@ -127,6 +133,7 @@ class DriverDashboard {
         .map((e) => DriverOffer.fromJson(e as Map<String, dynamic>))
         .toList(),
     curfewActive: json['curfewActive'] as bool? ?? false,
+    activeOrderTotalEtb: (json['activeOrderTotalEtb'] as num?)?.toInt(),
   );
 
   static const empty = DriverDashboard(

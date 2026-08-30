@@ -170,7 +170,8 @@ Widget _eta(BuildContext context, Strings s, Order order) {
     final curfew = ref.watch(catalogProvider).valueOrNull?.config.vehicleCurfew ?? false;
     final canCancel = order.status == OrderStatus.placed ||
         order.status == OrderStatus.merchantAck ||
-        order.status == OrderStatus.preparing;
+        order.status == OrderStatus.preparing ||
+        order.status == OrderStatus.courierAssigned;
     return Card(
       elevation: 0,
       child: Padding(

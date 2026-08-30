@@ -46,4 +46,26 @@ void main() {
     );
     expect(find.textContaining('On-time guaranteed'), findsOneWidget);
   });
+
+  testWidgets('checkout handles catalog-not-loaded without crashing (no null deref)', (tester) async {
+    // Cart is non-empty but the catalog provider never loaded (offline / slow
+    // start). The estimate/price lock must render without throwing a null check.
+    const item = MenuItem(
+      id: 'sk-doro-wot', merchantId: 'sheger-kitchen', nameEn: 'Doro Wot', nameAm: 'ዶሮ ወጥ', priceEtb: 420,
+      hasInjeraStepper: true, spiceLevels: 3,
+    );
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        cartProvider.overrideWith((ref) => _SeededCartNotifier(item)),
+        // NOTE: catalogProvider intentionally NOT overridden -> stays in loading.
+      ],
+      child: const MaterialApp(home: CheckoutScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CheckoutScreen), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('ETB'), findsWidgets);
+  });
 }

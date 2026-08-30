@@ -159,7 +159,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
   Widget _savingsCard(BuildContext context, Strings s, Cart cart) {
     final deliveries = ref.watch(ordersProvider).length;
     // Per-person platter math (§6 #16): sharing is visibly cheaper than solo.
-    final perHead = cart.lines.length > 0 ? cart.subtotal / cart.lines.length : cart.subtotal;
+    final perHead = cart.totalQty > 0 ? cart.subtotal / cart.totalQty : cart.subtotal;
     final stampsToFree = Loyalty.stampsToNext(deliveries);
     return Card(
       elevation: 0,
@@ -270,7 +270,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
             if (savings > 0)
               Container(
                 margin: const EdgeInsets.only(top: 4),
-                child: Text('${s.deliveredOnFoot} — ${s.youSave} $total ETB',
+                child: Text('${s.deliveredOnFoot} — ${s.youSave} $savings ETB',
                     style: const TextStyle(color: AppColors.tsomGreen, fontWeight: FontWeight.w700)),
               ),
             const Divider(height: 1, color: AppColors.cardBorder),

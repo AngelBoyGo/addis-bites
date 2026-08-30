@@ -25,6 +25,14 @@ const _dash = DriverDashboard(
     ),
   ],
   curfewActive: false,
+  activeOrderTotalEtb: 940,
+);
+
+const _dashNoActive = DriverDashboard(
+  wallet: DriverWallet(balanceEtb: 0, floatEtb: 0, floatCap: 1500, payoutDue: 0),
+  econByVehicle: [],
+  offers: [],
+  curfewActive: false,
 );
 
 void main() {
@@ -43,5 +51,33 @@ void main() {
     await tester.drag(find.byType(ListView).last, const Offset(0, -500));
     await tester.pumpAndSettle();
     expect(find.text('Sheger Kitchen · Bole'), findsOneWidget);
+  });
+
+  testWidgets('driver collect amount uses the locked order total, not a hardcoded 940 when none exists', (tester) async {
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        driverDashboardProvider.overrideWith((ref) => _SeededDriverNotifier(ref, _dash)),
+      ],
+      child: const MaterialApp(home: DriverShell()),
+    ));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView).last, const Offset(0, -600));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Collect exactly'), findsOneWidget);
+    expect(find.textContaining('940'), findsOneWidget);
+  });
+
+  testWidgets('driver with no active pickup shows the empty-state label, no collect banner', (tester) async {
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        driverDashboardProvider.overrideWith((ref) => _SeededDriverNotifier(ref, _dashNoActive)),
+      ],
+      child: const MaterialApp(home: DriverShell()),
+    ));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView).last, const Offset(0, -600));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('No active pickup'), findsOneWidget);
+    expect(find.textContaining('Collect exactly'), findsNothing);
   });
 }

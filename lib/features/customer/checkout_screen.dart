@@ -76,16 +76,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     final subtotal = cart.subtotal;
     final cfg = catalog?.config;
-    final buna = Pricing.bunaRun(cfg!, cart);
-    final bandFee = Pricing.deliveryFee(cfg, cart.band);
+    final buna = cfg == null ? null : Pricing.bunaRun(cfg, cart);
+    final bandFee = cfg == null ? 0 : Pricing.deliveryFee(cfg, cart.band);
     final delivery = _pickup ? 0 : (buna ?? bandFee);
-    final surge = Pricing.surge(cfg);
+    final surge = cfg == null ? 0 : Pricing.surge(cfg);
     final meetSavings = _meetPoint ? 12 : 0;
     final scheduleSavings = _schedule ? 15 : 0;
     final digitalSavings = _digitalPayDiscount && _payment == 'chapa' ? 8 : 0;
     final roundSavings = _selectedRoundId != null ? 10 : 0;
     final savingsTotal = meetSavings + scheduleSavings + digitalSavings + roundSavings;
-    final estimate = subtotal + delivery + cfg.serviceFee + surge - savingsTotal;
+    final estimate = subtotal + delivery + (cfg?.serviceFee ?? 0) + surge - savingsTotal;
 
     final landmarkReady = _landmark.text.trim().length >= 3;
     final canSubmit = landmarkReady && _subCity.isNotEmpty && !cart.isEmpty && !_submitting;
@@ -204,7 +204,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     return MapPinField(key: _mapKey);
   }
 
-  Widget _savings(BuildContext context, Strings s, Cart cart, AppConfig cfg) {
+  Widget _savings(BuildContext context, Strings s, Cart cart, AppConfig? cfg) {
     return Card(
       elevation: 0,
       child: Padding(
@@ -266,7 +266,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Widget _summary(BuildContext context, Strings s, int subtotal, int delivery,
-      AppConfig cfg, int surge, int savingsTotal, int estimate) {
+      AppConfig? cfg, int surge, int savingsTotal, int estimate) {
     return Card(
       elevation: 0,
       child: Padding(
@@ -276,7 +276,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           children: [
             _feeLine(context, s.subtotal, '$subtotal ETB'),
             _feeLine(context, s.deliveryFee, '$delivery ETB'),
-            _feeLine(context, s.serviceFee, '${cfg.serviceFee} ETB'),
+            _feeLine(context, s.serviceFee, '${cfg?.serviceFee ?? 0} ETB'),
             if (surge > 0) _feeLine(context, s.surge, '+$surge ETB'),
             if (savingsTotal > 0)
               _feeLine(context, s.youSave, '−$savingsTotal ETB', color: AppColors.tsomGreen),
