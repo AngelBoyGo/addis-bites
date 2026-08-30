@@ -195,6 +195,16 @@ async function ensureSchema(env) {
 //   - production JWT signed by AUTH_SECRET (verified via buildToken/verifyToken),
 //   - legacy `demo-<phone>` tokens (dev / offline harness).
 // Returns the normalized role string or null.
+async function heldRole(phone, env) {
+  if (env && env.DB) {
+    try {
+      const row = await env.DB.prepare('SELECT role FROM profiles WHERE phone = ?').bind(phone).first();
+      if (row && row.role) return row.role;
+    } catch (_) { /* fall through */ }
+  }
+  return inMemoryProfiles[phone] || null;
+}
+
 async function resolveRole(authHeader, env) {
   if (!authHeader) return null;
   const token = String(authHeader).replace(/^Bearer\s+/i, '').trim();
@@ -324,6 +334,10 @@ export default {
       await ensureSchema(env);
 
       // 1. Join / Profile Creation
+      // Security: `/join` is a PUBLIC self-onboarding endpoint. It may only
+      // mint customer / merchant / driver profiles. Staff roles (admin,
+      // finance, support, ceo) are provisioned server-side (seed / bootstrap);
+      // a caller may claim a staff role ONLY when that phone already holds it.
       if (method === 'POST' && path === '/join') {
         const body = await request.json().catch(() => ({}));
         const profileId = `p-${Date.now()}`;
@@ -331,6 +345,17 @@ export default {
         const phone = body.phone || '+251911000001';
         const name = body.name || 'Demo User';
         const vehicle = role === 'driver' ? 'motorbike' : null;
+
+        const staffRoles = ['admin', 'finance', 'support', 'ceo'];
+        if (staffRoles.includes(role)) {
+          const held = await heldRole(phone, env);
+          if (held !== role) {
+            return new Response(
+              JSON.stringify({ error: 'forbidden', detail: `role ${role} is provisioned server-side` }),
+              { status: 403, headers: corsHeaders }
+            );
+          }
+        }
 
         if (env?.DB) {
           await env.DB.prepare(

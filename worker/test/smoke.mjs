@@ -208,6 +208,17 @@ check('expired JWT -> 401', r.status === 401, r);
 r = await jwtCall('GET', '/api/admin/snapshot', 'eyJhbGciOiJIUzI1NiJ9.demo-+25197778881');
 check('legacy demo token rejected when AUTH_SECRET set', r.status === 401, r);
 
+// ---- Privilege-escalation guard: /join must NOT self-assign staff roles.
+// A random public caller claiming "admin" must not gain staff access. Staff
+// roles (admin, finance, support, ceo) are provisioned server-side only.
+for (const bad of ['admin', 'finance', 'support', 'ceo']) {
+  r = await call('POST', '/join', null, { phone: '+25197777777', name: 'Impostor', role: bad }, envAuth);
+  const gotRole = r.j && r.j.profile && r.j.profile.role;
+  check(`join rejects self-assigned ${bad} role`, r.status === 403 || gotRole !== bad, { status: r.status, j: r.j });
+}
+r = await jwtCall('GET', '/api/admin/snapshot', 'eyJhbGciOiJIUzI1NiJ9.demo-+25197777777');
+check('impostor admin snapshot is denied', r.status === 401 || r.status === 403, r);
+
 // ---- Chapa webhook (signature-verified, idempotent) + payout provider shell ----
 const demoEnv = { DEMO_WEBHOOK: '1' };
 const rawCall = async (route, rawBody) => {
