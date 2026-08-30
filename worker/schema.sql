@@ -189,7 +189,7 @@ INSERT OR REPLACE INTO menu_items (id, merchant_id, name_am, name_en, price_etb,
 -- progressive strike ledger, and refund requests.
 CREATE TABLE IF NOT EXISTS misconduct_reports (
   id TEXT PRIMARY KEY,
-  order_id TEXT REFERENCES orders(id),
+  order_id TEXT,
   reporter_type TEXT,
   reporter_id TEXT,
   subject_type TEXT,
@@ -210,7 +210,7 @@ CREATE TABLE IF NOT EXISTS strikes (
 
 CREATE TABLE IF NOT EXISTS refund_requests (
   id TEXT PRIMARY KEY,
-  order_id TEXT REFERENCES orders(id),
+  order_id TEXT,
   amount_etb INTEGER,
   status TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
