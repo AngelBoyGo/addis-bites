@@ -280,3 +280,25 @@ CREATE TABLE IF NOT EXISTS pod_receipts (
   pin TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Merchant applications (admin console onboarding)
+CREATE TABLE IF NOT EXISTS merchant_applications (
+  id TEXT PRIMARY KEY,
+  owner_name TEXT,
+  phone TEXT,
+  business_name TEXT,
+  sub_city TEXT,
+  sefer TEXT,
+  status TEXT DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- OTP audit log
+CREATE TABLE IF NOT EXISTS otp_log (
+  id TEXT PRIMARY KEY,
+  phone TEXT,
+  channel TEXT,
+  provider TEXT,
+  used INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

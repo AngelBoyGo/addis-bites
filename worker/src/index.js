@@ -915,7 +915,14 @@ export default {
             merchantApplications: (appsRes.results || []).map(a => ({ id: a.id, ownerName: a.owner_name, phone: a.phone, businessName: a.business_name, subCity: a.sub_city, sefer: a.sefer, acceptsCash: true, acceptsChapa: true, tsomCertified: true, halalCertified: false, status: a.status })),
             ocrQueue: inMemoryOcrQueue,
             otpLog: (otpRes.results || []).map(e => ({ phone: e.phone, channel: e.channel, provider: e.provider, createdAt: e.created_at, used: !!e.used })),
-            channelStatus: { provider: 'demo', demo: true, missingSecrets: ['AFROMESSAGE_API_KEY', 'TELEGRAM_BOT_TOKEN'] },
+            channelStatus: {
+              provider: env?.TELEGRAM_BOT_TOKEN ? 'telegram+demo_sms' : 'demo',
+              demo: !env?.TELEGRAM_BOT_TOKEN,
+              missingSecrets: [
+                ...(!env?.AFROMESSAGE_API_KEY ? ['AFROMESSAGE_API_KEY'] : []),
+                ...(!env?.TELEGRAM_BOT_TOKEN ? ['TELEGRAM_BOT_TOKEN'] : [])
+              ]
+            },
             config
           })), { headers: corsHeaders });
         }
