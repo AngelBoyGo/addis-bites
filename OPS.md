@@ -18,8 +18,11 @@
 | A3 | Apply schema | ✅ **DONE** — 27 queries executed, all 16 tables + seeds populated. |
 | A4 | Deploy Worker | ✅ **LIVE** at `https://addis-bites-worker.izzyblast2010.workers.dev` (verified with `GET /api/catalog`, `POST /join`, `GET /api/driver/dashboard`). |
 | A5 | Domain / DNS | Using `https://addis-bites-worker.izzyblast2010.workers.dev`. If pointing custom domain, add CNAME in Cloudflare DNS. |
-| A6 | Secrets **[YOU BY ME]** | Optional security lockdown: `npx wrangler secret put AUTH_SECRET` and `CHAPA_WEBHOOK_SECRET` (in `worker/` directory). Without `AUTH_SECRET`, API runs on insecure `demo-` tokens. |
+| A6 | Secrets | ✅ **DONE** — `AUTH_SECRET`, `CHAPA_WEBHOOK_SECRET`, `CHAPA_PUBLIC_KEY`, `CHAPA_SECRET_KEY`, `AFROMESSAGE_API_KEY`, `TELEGRAM_BOT_TOKEN` all live in Cloudflare (set via wrangler; values never committed). Worker verified on signed-JWT flow. |
 | A7 | Idempotent startup | ✅ **DONE** — `ensureSchema()` self-provisions lazily. |
+| A8 | Web hosting | ✅ **LIVE** — `https://addis-bites-web.pages.dev` (Flutter web via Cloudflare Pages) + privacy policy at `/privacy` (PDPP 1321/2024). |
+| A9 | Health check | ✅ **LIVE** — `GET /api/health` returns `{status:"ok"}`. |
+| A10 | Chapa webhook | ✅ **LIVE** — `POST /api/webhooks/chapa` with HMAC verification; configured in Chapa dashboard (Merchant ID 7696163, test mode). |
 
 ## B. Payments (real money movement)
 
@@ -27,19 +30,21 @@
 
 | # | Step | Research / Action |
 |---|---|---|
-| B1 | **Chapa** merchant account | Individual developer sandbox available at <https://developer.chapa.co> (no commercial license needed for testing). Split‑payment docs: <https://developer.chapa.co/integrations/split-payment>. Commercial needs TIN + business registration. |
+| B1 | **Chapa** merchant account | ✅ **DONE** — Account created & email-verified. Business: **Addis Bites**, Merchant ID **7696163**, **Test Mode** active. Test keys (`CHAPUBK_TEST-…` / `CHASECK_TEST-…`) stored in Cloudflare secrets. |
+| B1b | Chapa webhook | ✅ **DONE** — Configured in dashboard: `https://addis-bites-worker.izzyblast2010.workers.dev/api/webhooks/chapa` + secret hash (matches `CHAPA_WEBHOOK_SECRET`). Success + failed-payment hooks enabled. |
+| B1c | Chapa live switch | ⬜ Needs KYC: business info + TIN + license (`dashboard.chapa.co` → Compliance → Verify Now). [DO BY ME] |
 | B2 | **Telebirr** B2C / merchant API | Sandbox at `sandbox.ethiotelecom.et/telebirr/...`. Introducer / Level‑1 KYC: <https://www.ethiotelecom.et/telebirr/telebirr-registration/>. Withdrawal: <https://www.ethiotelecom.et/telebirr/withdraw/>. |
-| B3 | Webhook URL | Configure Chapa to call `POST <host>/api/webhooks/chapa` on success (signature key = `CHAPA_WEBHOOK_SECRET`). Set as Cloudflare secret (A6). |
-| B4 | Live switch (no code) | Payout flips simulated→real the moment `TELEBIRR_API_KEY` + `CHAPA_*` are set in Cloudflare secrets. |
+| B3 | Webhook URL | ✅ see B1b. |
+| B4 | Live switch (no code) | Payout flips simulated→real the moment `TELEBIRR_API_KEY` + live Chapa keys are set in Cloudflare secrets. |
 
 ## C. SMS / notifications (critical path — many users are USSD-first)
 
 | # | Step | Research / Action |
 |---|---|---|
-| C1 | **Afromessage** SMS | Signup + buy credit + API key: <https://afromessage.com>. Code reads `smsProvider:'afromessage'`. Auth token uploaded to Cloudflare. |
-| C2 | **Telegram Bot** | Create via <https://t.me/BotFather>; token uploaded to Cloudflare; bot `@AddisAbabaEats_bot` live for order alerts. |
-| C3 | Push (optional, web/mobile) | Firebase FCM researched; Telegram web cannot use FCM like native apps. |
-| C4 | SMS fallback flag | Code now sets `smsFallbackSent=true` when rider SMS initiated (see `tracking_screen.dart`); countdown card reflects escalated state. |
+| C1 | **Afromessage** SMS | ✅ **DONE** — Account created + email-verified (`Addis Bites`). **API token (JWT, valid to Aug 2031) → Cloudflare `AFROMESSAGE_API_KEY`.** Beta account: ~98 free messages, expires Sep 30 2026. ⬜ Pending: phone verification + sender-name "AddisBites" (requires account upgrade — email sales@afromessage.com). |
+| C2 | **Telegram Bot** | ✅ **DONE** — `@AddisAbabaEats_bot` verified via Bot API; token in Cloudflare; **Mini App menu button live** (launches `addis-bites-web.pages.dev`). |
+| C3 | Push (optional, web/mobile) | Firebase FCM researched; needs Google login to create project. |
+| C4 | SMS fallback flag | ✅ Code sets `smsFallbackSent=true` when rider SMS initiated. |
 ## C. Legal / regulatory / corporate (the Metis PDF)
 
 > The PDF cannot be read by this model. Convert it to text so it can be folded in.
@@ -63,9 +68,9 @@
 
 | ID | Action |
 |---|---|
-| E1 | **Sentry** crash logging: <https://sentry.io> — DSN into the app. **Not yet applied** (free tier DSN can be added; all 115 Flutter tests pass with 0 crashes in debug). |
-| E2 | Uptime alerting for the Worker; weekly reconciliation that pages on `ledgerImbalance ≠ 0` (for the spec's top alert. **Wiring not started**; Cloudflare dashboard can monitor request latency. |
-| E3 | D1 backup/export/DR plan. **Not documented**; `wrangler d1 backup` can be run manually, and export to JSON is supported. |
+| E1 | **Sentry** crash logging | ✅ **DONE** — Org `addis-bites.sentry.io` created (separate from `metisgold` so quota is fresh), Flutter project live, DSN wired into `lib/main.dart` (`sentry_flutter`, no PII, prod env). ⬜ Optional: Workers SDK for the backend. |
+| E2 | Uptime alerting for the Worker; weekly reconciliation that pages on `ledgerImbalance ≠ 0`. **Wiring not started**; `/api/health` exists for external monitors. |
+| E3 | D1 backup/export/DR plan. **Not documented**; `wrangler d1 export` works manually. |
 
 ---
 
