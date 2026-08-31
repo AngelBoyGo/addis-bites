@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "682279432166",
+    "project_id": "addis-eats-8a4f9",
+    "storage_bucket": "addis-eats-8a4f9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:682279432166:android:45e512612f5f72856ab027",
+        "android_client_info": {
+          "package_name": "com.addisbites.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAY-Rar0LE7sS-sqM2h1vsZQisaFq3rm1I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
