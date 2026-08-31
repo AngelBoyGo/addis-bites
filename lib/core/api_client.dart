@@ -140,6 +140,16 @@ class ApiClient {
     return Order.fromJson(data as Map<String, dynamic>);
   }
 
+  /// Initializes a Chapa hosted-checkout for [orderId]. Returns the worker's
+  /// payload: {ok, simulated, checkoutUrl} — checkoutUrl is null when the
+  /// order is already paid.
+  Future<Map<String, dynamic>> chapaInitialize(String orderId, String token) async {
+    if (isMock) return _mock.chapaInitialize(orderId);
+    final r = await _dio.post<dynamic>('/api/payments/chapa/initialize',
+        data: {'orderId': orderId}, options: Options(headers: _auth(token)));
+    return Map<String, dynamic>.from(r.data as Map);
+  }
+
   Future<List<Order>> fetchOrders(String phone, String token) async {
     if (isMock) return _mock.ordersFor(phone);
     final data = await _get('/api/orders/$phone', token);

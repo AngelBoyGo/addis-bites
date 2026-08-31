@@ -155,6 +155,17 @@ class MockBackend {
     return _orders[id]!;
   }
 
+  /// Simulated Chapa checkout init (offline harness) — mirrors the worker's
+  /// no-credentials path so the same UI code runs against both.
+  Map<String, dynamic> chapaInitialize(String orderId) {
+    if (!_orders.containsKey(orderId)) throw const ApiPublic('Order not found');
+    return {
+      'ok': true,
+      'simulated': true,
+      'checkoutUrl': 'https://checkout.chapa.co/payment/addis-bites/demo/$orderId',
+    };
+  }
+
   List<Order> ordersFor(String phone) =>
       _orders.values.where((o) => o.phone == phone).toList()
         ..sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));

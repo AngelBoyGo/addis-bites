@@ -15,7 +15,7 @@ import {
   footEarnings
 } from './shapes.js';
 import { signToken, verifyToken } from './auth.js';
-import { sendPayout, verifyWebhook } from './provider.js';
+import { sendPayout, verifyWebhook, initializeChapaTx } from './provider.js';
 import { hmacHex } from './hmac.js';
 
 // ---- D1 self-migration (single source for the tables the console routes
@@ -519,8 +519,8 @@ export default {
           surge,
           total,
           paymentMethod: body.paymentMethod || 'chapa',
-          paymentStatus: body.paymentMethod === 'chapa' ? 'confirmed' : 'cod_pending',
-          paymentRef: body.paymentMethod === 'chapa' ? 'FT2589102X4' : null,
+          paymentStatus: body.paymentMethod === 'chapa' ? 'pending' : 'cod_pending',
+          paymentRef: null,
           status: 'placed',
           subCity: body.subCity || 'Bole',
           sefer: body.sefer || 'Bole Medhanealem',
@@ -580,6 +580,64 @@ export default {
         }
 
         return new Response(JSON.stringify(orderData), { headers: corsHeaders });
+      }
+
+      // 3b. Chapa checkout initialization (hosted payment page)
+      // With CHAPA_SECRET_KEY configured this performs the real API call and
+      // marks the order payment-pending; without it a simulated demo URL is
+      // returned so the offline harness works. Confirmation arrives via the
+      // /api/webhooks/chapa handler (signature-verified).
+      if (method === 'POST' && path === '/api/payments/chapa/initialize') {
+        const role = await resolveRole(request.headers.get('Authorization'), env);
+        if (!role) return unauthorized(corsHeaders);
+        if (!roleAllowed('customer', role)) return forbidden(corsHeaders);
+
+        const body = await request.json().catch(() => ({}));
+        const orderId = body.orderId;
+        if (!orderId) return new Response(JSON.stringify({ error: 'bad_request' }), { status: 400, headers: corsHeaders });
+
+        let order = null;
+        if (env?.DB) {
+          const row = await env.DB.prepare(`SELECT * FROM orders WHERE id = ?`).bind(orderId).first();
+          if (row) {
+            order = {
+              id: row.id,
+              total: row.total,
+              paymentStatus: row.payment_status,
+              paymentRef: row.payment_ref
+            };
+          }
+        } else {
+          const o = inMemoryOrders.find(x => x.id === orderId);
+          if (o) order = { id: o.id, total: o.total, paymentStatus: o.paymentStatus, paymentRef: o.paymentRef };
+        }
+        if (!order) return notFound(corsHeaders);
+        if (order.paymentStatus === 'confirmed') {
+          return new Response(JSON.stringify({ ok: true, alreadyPaid: true, checkoutUrl: null }), { headers: corsHeaders });
+        }
+
+        const tx = await initializeChapaTx(order, env);
+        if (!tx.ok) {
+          return new Response(JSON.stringify({ error: 'chapa_init_failed', detail: tx.error }), { status: 502, headers: corsHeaders });
+        }
+
+        // Real transactions flip the order to payment-pending until the
+        // webhook confirms. Simulated stays as-is (offline harness).
+        if (!tx.simulated) {
+          if (env?.DB) {
+            await env.DB.prepare(`UPDATE orders SET payment_status = 'pending', payment_ref = ? WHERE id = ?`)
+              .bind(orderId, orderId).run();
+          } else {
+            const o = inMemoryOrders.find(x => x.id === orderId);
+            if (o) { o.paymentStatus = 'pending'; o.paymentRef = orderId; }
+          }
+        }
+
+        return new Response(JSON.stringify({
+          ok: true,
+          simulated: tx.simulated,
+          checkoutUrl: tx.checkoutUrl
+        }), { headers: corsHeaders });
       }
 
       // 4. Order Details
@@ -1081,6 +1139,12 @@ export default {
       }
 
       // 8. Driver Dashboard & Actions
+      // (Chapa webhook lives further down — the canonical tx_ref-based handler.)
+
+      if (method === 'GET' && path === '/api/health') {
+        return new Response(JSON.stringify({ status: 'ok' }), { headers: corsHeaders });
+      }
+
       if (method === 'GET' && path === '/api/driver/dashboard') {
         const role = await resolveRole(request.headers.get('Authorization'), env);
         if (!role) return unauthorized(corsHeaders);
@@ -1356,8 +1420,11 @@ export default {
         }
         let body = {};
         try { body = JSON.parse(raw); } catch (_) { return new Response(JSON.stringify({ error: 'bad_json' }), { status: 400, headers: corsHeaders }); }
-        const txRef = body.tx_ref || body.reference;
-        const status = String(body.status || '').toLowerCase();
+        // Chapa's production webhook wraps the payload as {event, data:{tx_ref, status}};
+        // the simple {tx_ref, status} shape is kept for the demo harness.
+        const d = body.data || {};
+        const txRef = body.data?.tx_ref || body.tx_ref || body.reference || d.reference;
+        const status = String(body.data?.status || body.status || '').toLowerCase();
         if (!txRef) return new Response(JSON.stringify({ error: 'missing_tx_ref' }), { status: 400, headers: corsHeaders });
         const success = ['success', 'completed', 'approved', 'confirmed'].includes(status);
 

@@ -32,3 +32,41 @@ export async function sendPayout(batch, env) {
 export async function verifyWebhook(rawBody, signature, secret) {
   return verifyHmac(rawBody, signature, secret);
 }
+
+/**
+ * Initializes a Chapa hosted-checkout transaction for an order.
+ * Without CHAPA_SECRET_KEY configured, returns a simulated checkout URL so the
+ * demo/offline harness keeps working (same policy as sendPayout).
+ * Returns {ok, simulated, checkoutUrl, error?}.
+ */
+export async function initializeChapaTx(order, env) {
+  const key = env?.CHAPA_SECRET_KEY;
+  if (!key) {
+    return {
+      ok: true,
+      simulated: true,
+      checkoutUrl: `https://checkout.chapa.co/payment/addis-bites/demo/${order.id}`
+    };
+  }
+  const baseUrl = env?.PUBLIC_BASE_URL || 'https://addis-bites-web.pages.dev';
+  const res = await fetch('https://api.chapa.co/v1/transaction/initialize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      amount: String(order.total),
+      currency: 'ETB',
+      email: env?.CHAPA_CUSTOMER_EMAIL || 'izzyblast2010@gmail.com',
+      first_name: 'Addis',
+      last_name: 'Bites',
+      tx_ref: order.id,
+      callback_url: `${baseUrl}/api/webhooks/chapa`,
+      return_url: `${baseUrl}/`,
+      customization: { title: 'Addis Bites', description: `Order ${order.id}` }
+    })
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || json.status !== 'success' || !json?.data?.checkout_url) {
+    return { ok: false, error: json?.message || `HTTP ${res.status}` };
+  }
+  return { ok: true, simulated: false, checkoutUrl: json.data.checkout_url };
+}

@@ -334,11 +334,23 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ref.read(cartProvider.notifier).clear();
       if (!mounted) return;
       if (_payment == 'chapa') {
-        // Hosted Chapa checkout (§5.5): open the hosted page so the customer can
-        // pay; on return the tracking screen polls /api/order/:id until
-        // paymentStatus == confirmed, then renders the verified receipt + QR.
-        await launchUri(context, 'https://checkout.chapa.co/payment/addis-bites/demo/${order.id}');
+        // §5.5 Chapa hosted checkout: ask the worker to initialize a real
+        // transaction (simulated when no keys are configured). On return the
+        // tracking screen polls /api/order/:id until paymentStatus ==
+        // confirmed, then renders the verified receipt + QR.
+        String? checkoutUrl;
+        try {
+          final pay = await api.chapaInitialize(order.id, session.token);
+          checkoutUrl = (pay['checkoutUrl'] ?? pay['checkout_url']) as String?;
+        } catch (_) {
+          // Initialization failure must not lose the order: tracking screen
+          // still shows it and the customer can retry payment from support.
+        }
         if (!mounted) return;
+        if (checkoutUrl != null && checkoutUrl.isNotEmpty) {
+          await launchUri(context, checkoutUrl);
+          if (!mounted) return;
+        }
         context.go('/order/${order.id}');
       } else {
         context.go('/order/${order.id}');

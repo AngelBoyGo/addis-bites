@@ -264,6 +264,42 @@ const vBad = await provider.verifyWebhook('hello', 'deadbeef', 'k');
 check('verifyWebhook accepts correct sig', vOk === true);
 check('verifyWebhook rejects wrong sig', vBad === false);
 
+// ---- Chapa checkout initialization (simulated without creds) ----
+r = await call('POST', '/api/payments/chapa/initialize', null, { orderId: 'ord-demo-1' });
+check('chapa initialize without token -> 401', r.status === 401, r);
+r = await call('POST', '/api/payments/chapa/initialize', SUPPORT, { orderId: 'ord-demo-1' });
+check('chapa initialize non-customer -> 403', r.status === 403, r);
+r = await call('POST', '/api/payments/chapa/initialize', CUST, { orderId: 'no-such-order' });
+check('chapa initialize unknown order -> 404', r.status === 404, r);
+// fresh unpaid order (webhook tests above already confirmed ord-demo-1)
+r = await call('POST', '/api/place-order', CUST, {
+  phone: '+251911000001', merchantId: 'sheger-kitchen',
+  items: [{ itemId: 'sk-doro-wot', qty: 2, injeraCount: 4, spice: 2 }],
+  subCity: 'Bole', sefer: 'Bole Medhanealem', landmarkText: 'Gate 2', paymentMethod: 'chapa',
+  idempotencyKey: 'chapa-init-1'
+});
+const unpaidId = r.j && r.j.id;
+r = await call('POST', '/api/payments/chapa/initialize', CUST, { orderId: unpaidId });
+check('chapa initialize simulates checkout url', r.status === 200 && r.j.ok === true && r.j.simulated === true
+  && typeof r.j.checkoutUrl === 'string' && r.j.checkoutUrl.includes('checkout.chapa.co'), r);
+r = await call('POST', '/api/payments/chapa/initialize', CUST, { orderId: unpaidId });
+check('chapa initialize twice -> ok (idempotent response)', r.status === 200 && r.j.ok === true, r);
+r = await call('POST', '/api/payments/chapa/initialize', CUST, {});
+check('chapa initialize missing orderId -> 400', r.status === 400, r);
+// real Chapa payload shape (event/data wrapper) must also verify
+const chapaRaw = JSON.stringify({ event: 'charge.success', data: { tx_ref: 'FT2589102X4', status: 'success' } });
+const chapaSig = await hmac.hmacHex(chapaRaw, 'demo-webhook-secret');
+{
+  const req = new Request('https://x.com/api/webhooks/chapa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-chapa-signature': chapaSig },
+    body: chapaRaw
+  });
+  const res = await worker.fetch(req, demoEnv, {});
+  const j = await res.json().catch(() => null);
+  check('chapa webhook accepts event/data payload', res.status === 200 && j.paid === true, { status: res.status, j });
+}
+
 // ---- Idempotent order creation (spec §3.5 / §5.10 duplicate protection) ----
 const orderBody = {
   phone: '+251911000001', merchantId: 'sheger-kitchen',
