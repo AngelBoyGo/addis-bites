@@ -43,7 +43,7 @@
 |---|---|---|
 | C1 | **Afromessage** SMS | ✅ **DONE** — Account created + email-verified (`Addis Bites`). **API token (JWT, valid to Aug 2031) → Cloudflare `AFROMESSAGE_API_KEY`.** Beta account: ~98 free messages, expires Sep 30 2026. ⬜ Pending: phone verification + sender-name "AddisBites" (requires account upgrade — email sales@afromessage.com). |
 | C2 | **Telegram Bot** | ✅ **DONE** — `@AddisAbabaEats_bot` verified via Bot API; token in Cloudflare; **Mini App menu button live** (launches `addis-bites-web.pages.dev`). |
-| C3 | Push (optional, web/mobile) | Firebase FCM researched; needs Google login to create project. |
+| C3 | Push (optional, web/mobile) | ✅ **DONE** — Firebase project `addis-eats-8a4f9` created (Spark/free), Android app `com.addisbites.app` registered (App ID `1:682279432166:android:45e512612f5f72856ab027`), `google-services.json` committed at `android/app/`. FCM server key can be added to Cloudflare when push is wired. |
 | C4 | SMS fallback flag | ✅ Code sets `smsFallbackSent=true` when rider SMS initiated. |
 ## C. Legal / regulatory / corporate (the Metis PDF)
 
@@ -60,9 +60,10 @@
 | ID | Action | Status |
 |---|---|---|
 | D1 | **Play Console** release signing | ✅ **DONE** — Generated production keystore (`upload-keystore.jks`), wired in `android/app/build.gradle.kts`, verified release APK signature with `CN=Addis Bites, C=ET`. |
+| D1b | **Play Console developer account** | ✅ **DONE** — Personal account created & $25 paid (Account ID `7433507581773030012`, "Dr. Ishmael Avery"). ⬜ **Publishing blocked on 3 human verifications**: identity doc upload, Android-device check (Play Console app), email code — see "Finish setting up" in console. `Create app` unlocks after these. |
 | D2 | App Store (needs macOS + Apple Dev account). | Pending |
-| D3 | Telegram Mini App: host `build/web/` behind HTTPS at Telegram-whitelisted URL + configure bot App. | Build ready (`flutter build web --release`) |
-| D4 | Privacy policy + data-safety answers (PDPP 1321/2024). | Researched / ready |
+| D3 | Telegram Mini App: host `build/web/` behind HTTPS at Telegram-whitelisted URL + configure bot App. | ✅ Menu button live (`setChatMenuButton` → `addis-bites-web.pages.dev`); full `/newapp` flow optional. |
+| D4 | Privacy policy + data-safety answers (PDPP 1321/2024). | ✅ **LIVE** at `https://addis-bites-web.pages.dev/privacy`; data-safety form ready to paste into Play Console. |
 
 ## E. Observability + ops readiness (spec §4 monitoring, free tier)
 
