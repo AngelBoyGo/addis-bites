@@ -53,3 +53,7 @@ worker/.dev.vars
 *.key
 !test/fixtures/
 worker/test/*.tmp.json
+
+analyzed.txt
+analyzed2.txt
+test_out.txt
