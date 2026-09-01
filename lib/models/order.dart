@@ -117,6 +117,7 @@ class Order {
     this.plusCode = '',
     this.subCity = '',
     this.sefer = '',
+    this.discount = 0,
     this.lat,
     this.lng,
     this.settlementBatch = '',
@@ -129,6 +130,7 @@ class Order {
   final int deliveryFee;
   final int serviceFee;
   final int surge;
+  final int discount;
   final int total;
   final String paymentMethod;
   final PaymentStatus paymentStatus;
@@ -166,6 +168,7 @@ class Order {
     deliveryFee: deliveryFee,
     serviceFee: serviceFee,
     surge: surge,
+    discount: discount,
     total: total,
     paymentMethod: paymentMethod,
     paymentStatus: paymentStatus,
@@ -200,6 +203,7 @@ class Order {
     deliveryFee: (json['deliveryFee'] as num?)?.toInt() ?? 0,
     serviceFee: (json['serviceFee'] as num?)?.toInt() ?? 0,
     surge: (json['surge'] as num?)?.toInt() ?? 0,
+    discount: (json['discount'] as num?)?.toInt() ?? 0,
     total: (json['total'] as num?)?.toInt() ?? 0,
     paymentMethod: json['paymentMethod'] as String? ?? 'cod',
     paymentStatus: switch (json['paymentStatus'] as String?) {
@@ -236,6 +240,7 @@ class Order {
     'deliveryFee': deliveryFee,
     'serviceFee': serviceFee,
     'surge': surge,
+    'discount': discount,
     'total': total,
     'paymentMethod': paymentMethod,
     'paymentStatus': paymentStatus.wire,

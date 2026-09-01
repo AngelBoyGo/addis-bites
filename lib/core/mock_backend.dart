@@ -87,6 +87,7 @@ class MockBackend {
     double? lng,
     required String paymentMethod,
     String? roundId,
+    String? promoCode,
   }) {
     // Server-authoritative pricing: re-fetch from catalog menu.
     int subtotal = 0;
@@ -112,7 +113,10 @@ class MockBackend {
     final delivery = _deliveryFor(lat, subtotal, roundId);
     final surge = _cfg.rainMode ? _cfg.rainSurge : 0;
     final service = _cfg.serviceFee;
-    final total = subtotal + delivery + service + surge;
+    // Offline harness mirrors the worker's promo contract (demo flat 10%).
+    final discount =
+        (promoCode != null && promoCode.trim().isNotEmpty) ? subtotal * 10 ~/ 100 : 0;
+    final total = subtotal + delivery + service + surge - discount;
     final merchant = _merchantById(merchantId);
     // §11.4 coverage gating: server enforces at order time with a clear
     // pre-submit error — never a post-hoc cancellation.
@@ -128,6 +132,7 @@ class MockBackend {
       deliveryFee: delivery,
       serviceFee: service,
       surge: surge,
+      discount: discount,
       total: total,
       paymentMethod: paymentMethod,
       paymentStatus: paymentMethod == 'chapa' ? PaymentStatus.confirmed : PaymentStatus.codPending,
@@ -165,6 +170,14 @@ class MockBackend {
       'checkoutUrl': 'https://checkout.chapa.co/payment/addis-bites/demo/$orderId',
     };
   }
+
+  /// Offline promo preview — demo flat 10% for any non-empty code.
+  Map<String, dynamic> promoValidate(String code) => {
+        'ok': true,
+        'valid': code.trim().isNotEmpty,
+        'discountPct': 10,
+        'label': code.trim(),
+      };
 
   List<Order> ordersFor(String phone) =>
       _orders.values.where((o) => o.phone == phone).toList()

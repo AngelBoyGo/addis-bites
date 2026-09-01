@@ -326,6 +326,8 @@ Widget _eta(BuildContext context, Strings s, Order order) {
             line(s.deliveryFee, '${order.deliveryFee} ETB'),
             line(s.serviceFee, '${order.serviceFee} ETB'),
             if (order.surge > 0) line(s.surge, '+${order.surge} ETB'),
+            if (order.discount > 0)
+              line('Promo discount', '-${order.discount} ETB'),
             line(s.total, '${order.total} ETB'),
           ],
         ),

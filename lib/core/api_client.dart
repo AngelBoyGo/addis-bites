@@ -101,6 +101,7 @@ class ApiClient {
     double? lng,
     required String paymentMethod,
     String? roundId,
+    String? promoCode,
   }) async {
     if (isMock) {
       return _mock.placeOrder(
@@ -115,6 +116,7 @@ class ApiClient {
         lng: lng,
         paymentMethod: paymentMethod,
         roundId: roundId,
+        promoCode: promoCode,
       );
     }
     final body = {
@@ -129,9 +131,19 @@ class ApiClient {
       if (lng != null) 'lng': lng,
       'paymentMethod': paymentMethod,
       if (roundId != null) 'roundId': roundId,
+      if (promoCode != null && promoCode.trim().isNotEmpty) 'promoCode': promoCode.trim(),
     };
     final r = await _dio.post<dynamic>('/api/place-order', data: body, options: Options(headers: _auth(token)));
     return Order.fromJson(r.data as Map<String, dynamic>);
+  }
+
+  /// Server-side promo preview (no side effects). Returns
+  /// {ok, valid, discountPct, label}.
+  Future<Map<String, dynamic>> promoValidate(String code, String token) async {
+    if (isMock) return _mock.promoValidate(code);
+    final r = await _dio.post<dynamic>('/api/promo/validate',
+        data: {'code': code}, options: Options(headers: _auth(token)));
+    return Map<String, dynamic>.from(r.data as Map);
   }
 
   Future<Order> fetchOrder(String id, String token) async {

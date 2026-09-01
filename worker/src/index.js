@@ -189,6 +189,23 @@ async function ensureSchema(env) {
   try {
     await env.DB.exec(SCHEMA_DDL);
   } catch (_) { /* migration is best-effort; existing DBs may already be current */ }
+  // Idempotent column adds (each runs alone so one failure never blocks the rest).
+  try {
+    await env.DB.exec(`ALTER TABLE orders ADD COLUMN discount INTEGER DEFAULT 0;`);
+  } catch (_) { /* column already exists */ }
+}
+
+// Resolves an active promotion by code (= label, case-insensitive).
+async function findPromotion(code, env) {
+  if (!code || !String(code).trim()) return null;
+  const c = String(code).trim().toLowerCase();
+  if (env?.DB) {
+    try {
+      const row = await env.DB.prepare(`SELECT * FROM promotions WHERE LOWER(label) = LOWER(?) AND active = 1`).bind(c).first();
+      if (row) return { id: row.id, label: row.label, discountPct: row.discount_pct, maxUses: row.max_uses, uses: row.uses, active: true };
+    } catch (_) { /* fall through to in-memory */ }
+  }
+  return inMemoryPromotions.find(p => p.active && p.label.toLowerCase() === c) || null;
 }
 
 // Resolves the caller's role from the Authorization bearer token. Supports:
@@ -507,7 +524,22 @@ export default {
         const deliveryFee = 80;
         const serviceFee = 20;
         const surge = 0;
-        const total = subtotal + deliveryFee + serviceFee + surge;
+
+        // §6 promos: a provided code must be valid, active and under its use
+        // cap — otherwise the placement fails loudly (never silently drop a
+        // discount the customer thinks they have).
+        let discount = 0;
+        let appliedPromo = null;
+        if (body.promoCode) {
+          const promo = await findPromotion(body.promoCode, env);
+          if (!promo || promo.uses >= promo.maxUses) {
+            return new Response(JSON.stringify({ error: 'invalid_promo' }), { status: 400, headers: corsHeaders });
+          }
+          discount = Math.floor(subtotal * promo.discountPct / 100);
+          appliedPromo = promo;
+        }
+
+        const total = subtotal + deliveryFee + serviceFee + surge - discount;
 
         const orderData = {
           id: orderId,
@@ -517,6 +549,8 @@ export default {
           deliveryFee,
           serviceFee,
           surge,
+          discount,
+          promoCode: appliedPromo ? appliedPromo.label : null,
           total,
           paymentMethod: body.paymentMethod || 'chapa',
           paymentStatus: body.paymentMethod === 'chapa' ? 'pending' : 'cod_pending',
@@ -544,8 +578,8 @@ export default {
 
         if (env?.DB) {
           await env.DB.prepare(
-            `INSERT INTO orders (id, phone, merchant_id, items_json, subtotal, delivery_fee, service_fee, surge, total, payment_method, payment_status, payment_ref, status, sub_city, sefer, landmark_text, lat, lng, plus_code, ack_deadline_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            `INSERT INTO orders (id, phone, merchant_id, items_json, subtotal, delivery_fee, service_fee, surge, discount, total, payment_method, payment_status, payment_ref, status, sub_city, sefer, landmark_text, lat, lng, plus_code, ack_deadline_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
           ).bind(
             orderData.id,
             body.phone || '+251911000001',
@@ -555,6 +589,7 @@ export default {
             orderData.deliveryFee,
             orderData.serviceFee,
             orderData.surge,
+            orderData.discount,
             orderData.total,
             orderData.paymentMethod,
             orderData.paymentStatus,
@@ -570,6 +605,15 @@ export default {
           ).run();
         }
 
+        // Consume one use of the applied promotion (server-authoritative cap).
+        if (appliedPromo) {
+          if (env?.DB) {
+            await env.DB.prepare(`UPDATE promotions SET uses = uses + 1 WHERE id = ?`).bind(appliedPromo.id).run();
+          } else {
+            appliedPromo.uses += 1;
+          }
+        }
+
         // Persist the idempotency key -> order so a retried request is deduped.
         if (idemKey) {
           if (env?.DB) {
@@ -580,6 +624,21 @@ export default {
         }
 
         return new Response(JSON.stringify(orderData), { headers: corsHeaders });
+      }
+
+      // 3c. Promo code validation (checkout preview — no side effects)
+      if (method === 'POST' && path === '/api/promo/validate') {
+        const role = await resolveRole(request.headers.get('Authorization'), env);
+        if (!role) return unauthorized(corsHeaders);
+        const body = await request.json().catch(() => ({}));
+        const promo = await findPromotion(body.code, env);
+        const valid = Boolean(promo) && promo.uses < promo.maxUses;
+        return new Response(JSON.stringify({
+          ok: true,
+          valid,
+          discountPct: valid ? promo.discountPct : 0,
+          label: valid ? promo.label : null
+        }), { headers: corsHeaders });
       }
 
       // 3b. Chapa checkout initialization (hosted payment page)
@@ -654,6 +713,7 @@ export default {
               deliveryFee: row.delivery_fee,
               serviceFee: row.service_fee,
               surge: row.surge,
+              discount: row.discount || 0,
               total: row.total,
               paymentMethod: row.payment_method,
               paymentStatus: row.payment_status,
@@ -721,6 +781,7 @@ export default {
             deliveryFee: row.delivery_fee,
             serviceFee: row.service_fee,
             surge: row.surge,
+            discount: row.discount || 0,
             total: row.total,
             paymentMethod: row.payment_method,
             paymentStatus: row.payment_status,
@@ -769,7 +830,7 @@ export default {
             `SELECT * FROM orders WHERE status = 'placed' ORDER BY created_at DESC`).all();
           return new Response(JSON.stringify((res.results || []).map(r => ({
             id: r.id, merchantName: 'Sheger Kitchen', items: JSON.parse(r.items_json || '[]'),
-            subtotal: r.subtotal, deliveryFee: r.delivery_fee, serviceFee: r.service_fee, surge: r.surge, total: r.total,
+            subtotal: r.subtotal, deliveryFee: r.delivery_fee, serviceFee: r.service_fee, surge: r.surge, discount: r.discount || 0, total: r.total,
             paymentMethod: r.payment_method, paymentStatus: r.payment_status, paymentRef: r.payment_ref,
             status: r.status, phone: r.phone, subCity: r.sub_city, sefer: r.sefer, landmarkText: r.landmark_text,
             plusCode: r.plus_code, lat: r.lat, lng: r.lng,
@@ -991,7 +1052,7 @@ export default {
             activeCouriers: 23,
             liveOrders: (liveRes.results || []).map(r => ({
               id: r.id, merchantName: 'Sheger Kitchen', items: JSON.parse(r.items_json || '[]'),
-              subtotal: r.subtotal, deliveryFee: r.delivery_fee, serviceFee: r.service_fee, surge: r.surge, total: r.total,
+              subtotal: r.subtotal, deliveryFee: r.delivery_fee, serviceFee: r.service_fee, surge: r.surge, discount: r.discount || 0, total: r.total,
               paymentMethod: r.payment_method, paymentStatus: r.payment_status, paymentRef: r.payment_ref, status: r.status,
               createdAt: r.created_at, phone: r.phone, subCity: r.sub_city, sefer: r.sefer
             })),

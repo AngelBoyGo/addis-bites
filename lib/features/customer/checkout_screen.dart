@@ -45,6 +45,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   bool _schedule = false;
   bool _digitalPayDiscount = false;
   String? _selectedRoundId;
+  final TextEditingController _promo = TextEditingController();
+  int _promoPct = 0;
+  String? _promoLabel;
+  bool _promoChecking = false;
   final GlobalKey<MapPinFieldState> _mapKey = GlobalKey<MapPinFieldState>();
 
   final List<String> _hubs = const [
@@ -63,7 +67,39 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   @override
   void dispose() {
     _landmark.dispose();
+    _promo.dispose();
     super.dispose();
+  }
+
+  /// Server-side preview so the customer sees the REAL discount before
+  /// placing the order (never a client-side guess).
+  Future<void> _applyPromo() async {
+    final code = _promo.text.trim();
+    if (code.isEmpty) {
+      setState(() { _promoPct = 0; _promoLabel = null; });
+      return;
+    }
+    setState(() => _promoChecking = true);
+    final token = ref.read(sessionProvider)?.token;
+    try {
+      final res = await ref.read(apiClientProvider).promoValidate(code, token ?? '');
+      if (!mounted) return;
+      final valid = res['valid'] == true;
+      setState(() {
+        _promoChecking = false;
+        _promoPct = valid ? ((res['discountPct'] as num?) ?? 0).toInt() : 0;
+        _promoLabel = valid ? (res['label'] as String?) : null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(valid ? 'Promo applied: ${res['label']} (−${res['discountPct']}%)' : 'Invalid promo code'),
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() { _promoChecking = false; _promoPct = 0; _promoLabel = null; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not validate promo — try again')),
+      );
+    }
   }
 
   @override
@@ -85,7 +121,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final digitalSavings = _digitalPayDiscount && _payment == 'chapa' ? 8 : 0;
     final roundSavings = _selectedRoundId != null ? 10 : 0;
     final savingsTotal = meetSavings + scheduleSavings + digitalSavings + roundSavings;
-    final estimate = subtotal + delivery + (cfg?.serviceFee ?? 0) + surge - savingsTotal;
+    final promoDiscount = _promoPct > 0 ? subtotal * _promoPct ~/ 100 : 0;
+    final estimate = subtotal + delivery + (cfg?.serviceFee ?? 0) + surge - savingsTotal - promoDiscount;
 
     final landmarkReady = _landmark.text.trim().length >= 3;
     final canSubmit = landmarkReady && _subCity.isNotEmpty && !cart.isEmpty && !_submitting;
@@ -99,6 +136,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _landmarkSection(context, s, session, catalog),
+          const SizedBox(height: 12),
+          _promoField(context, s),
           const SizedBox(height: 12),
           _mapSection(context, s),
           const SizedBox(height: 12),
@@ -122,7 +161,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           _section(context, s.paymentMethod),
           _paymentSelector(context, s),
           const SizedBox(height: 16),
-          _summary(context, s, subtotal, delivery, cfg, surge, savingsTotal, estimate),
+          _summary(context, s, subtotal, delivery, cfg, surge, savingsTotal, promoDiscount, estimate),
           const SizedBox(height: 8),
           Text(s.priceLockNote, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 6),
@@ -200,6 +239,37 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
+  Widget _promoField(BuildContext context, Strings s) {
+    return Card(
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _promo,
+                decoration: InputDecoration(
+                  labelText: 'Promo code',
+                  hintText: _promoLabel != null ? '$_promoLabel (−$_promoPct%)' : 'e.g. Welcome -10%',
+                  prefixIcon: const Icon(Icons.redeem_outlined),
+                ),
+                textCapitalization: TextCapitalization.characters,
+              ),
+            ),
+            const SizedBox(width: 8),
+            _promoChecking
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                : OutlinedButton(
+                    onPressed: _applyPromo,
+                    child: const Text('Apply', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _mapSection(BuildContext context, Strings s) {
     return MapPinField(key: _mapKey);
   }
@@ -266,7 +336,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Widget _summary(BuildContext context, Strings s, int subtotal, int delivery,
-      AppConfig? cfg, int surge, int savingsTotal, int estimate) {
+      AppConfig? cfg, int surge, int savingsTotal, int promoDiscount, int estimate) {
     return Card(
       elevation: 0,
       child: Padding(
@@ -278,6 +348,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             _feeLine(context, s.deliveryFee, '$delivery ETB'),
             _feeLine(context, s.serviceFee, '${cfg?.serviceFee ?? 0} ETB'),
             if (surge > 0) _feeLine(context, s.surge, '+$surge ETB'),
+            if (promoDiscount > 0)
+              _feeLine(context, 'Promo ($_promoLabel)', '−$promoDiscount ETB', color: AppColors.tsomGreen),
             if (savingsTotal > 0)
               _feeLine(context, s.youSave, '−$savingsTotal ETB', color: AppColors.tsomGreen),
             const Divider(height: 1, color: AppColors.cardBorder),
@@ -327,6 +399,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         landmarkText: _landmark.text.trim(),
         paymentMethod: _payment,
         roundId: _selectedRoundId,
+        promoCode: _promoPct > 0 ? _promo.text.trim() : null,
         lat: _mapKey.currentState?.lat,
         lng: _mapKey.currentState?.lng,
       );
@@ -375,6 +448,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             lat: _mapKey.currentState?.lat,
             lng: _mapKey.currentState?.lng,
             paymentMethod: _payment,
+            promoCode: _promoPct > 0 ? _promo.text.trim() : null,
           ),
         );
       }

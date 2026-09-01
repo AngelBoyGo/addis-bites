@@ -119,6 +119,7 @@ class OrdersNotifier extends StateNotifier<List<Order>> {
           lat: p.lat,
           lng: p.lng,
           paymentMethod: p.paymentMethod,
+          promoCode: p.promoCode,
         );
         _queue.removeAt(0);
         upsert(order);
@@ -173,6 +174,7 @@ class PendingOrder {
   final double? lat;
   final double? lng;
   final String paymentMethod;
+  final String? promoCode;
   int attempts;
 
   PendingOrder({
@@ -186,6 +188,7 @@ class PendingOrder {
     this.lat,
     this.lng,
     required this.paymentMethod,
+    this.promoCode,
     this.attempts = 0,
   });
 
@@ -200,6 +203,7 @@ class PendingOrder {
     if (lat != null) 'lat': lat,
     if (lng != null) 'lng': lng,
     'paymentMethod': paymentMethod,
+    if (promoCode != null) 'promoCode': promoCode,
     'attempts': attempts,
   };
 
@@ -216,6 +220,7 @@ class PendingOrder {
     lat: (j['lat'] as num?)?.toDouble(),
     lng: (j['lng'] as num?)?.toDouble(),
     paymentMethod: j['paymentMethod'] as String? ?? 'chapa',
+    promoCode: j['promoCode'] as String?,
     attempts: (j['attempts'] as num?)?.toInt() ?? 0,
   );
 }

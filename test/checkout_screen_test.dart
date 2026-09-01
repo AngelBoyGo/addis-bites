@@ -41,8 +41,9 @@ void main() {
     expect(find.byType(CheckoutScreen), findsOneWidget);
     await tester.scrollUntilVisible(
       find.textContaining('On-time guaranteed'),
-      300,
+      500,
       scrollable: find.byType(Scrollable).first,
+      maxScrolls: 30,
     );
     expect(find.textContaining('On-time guaranteed'), findsOneWidget);
   });
@@ -67,5 +68,38 @@ void main() {
     expect(find.byType(CheckoutScreen), findsOneWidget);
     expect(tester.takeException(), isNull);
     expect(find.textContaining('ETB'), findsWidgets);
+  });
+
+  testWidgets('promo code field applies a validated discount to the estimate', (tester) async {
+    final mb = MockBackend();
+    final catalog = mb.catalog();
+    const item = MenuItem(
+      id: 'sk-doro-wot', merchantId: 'sheger-kitchen', nameEn: 'Doro Wot', nameAm: 'ዶሮ ወጥ', priceEtb: 420,
+      hasInjeraStepper: true, spiceLevels: 3,
+    );
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        catalogProvider.overrideWith((ref) => _SeededCatalogNotifier(ref, catalog)),
+        cartProvider.overrideWith((ref) => _SeededCartNotifier(item)),
+      ],
+      child: const MaterialApp(home: CheckoutScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    // Enter a code and tap Apply (mock validates any non-empty code at 10%).
+    await tester.enterText(find.widgetWithText(TextField, 'Promo code'), 'WELCOME10');
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+
+    // SnackBar confirms + the summary shows the promo line.
+    expect(find.textContaining('Promo applied'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.textContaining('Promo ('),
+      500,
+      scrollable: find.byType(Scrollable).first,
+      maxScrolls: 30,
+    );
+    expect(find.textContaining('Promo ('), findsOneWidget);
   });
 }

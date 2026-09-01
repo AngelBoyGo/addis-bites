@@ -286,6 +286,33 @@ r = await call('POST', '/api/payments/chapa/initialize', CUST, { orderId: unpaid
 check('chapa initialize twice -> ok (idempotent response)', r.status === 200 && r.j.ok === true, r);
 r = await call('POST', '/api/payments/chapa/initialize', CUST, {});
 check('chapa initialize missing orderId -> 400', r.status === 400, r);
+
+// ---- Promo codes: create -> validate -> apply at place-order ----
+r = await call('POST', '/api/ceo/promo', CEO, { label: 'AUDIT15', discountPct: 15, maxUses: 2 });
+check('ceo creates promo', r.status === 200, r);
+r = await call('POST', '/api/promo/validate', null, { code: 'AUDIT15' });
+check('promo validate requires auth', r.status === 401, r);
+r = await call('POST', '/api/promo/validate', CUST, { code: 'AUDIT15' });
+check('promo validate returns 15%', r.status === 200 && r.j.valid === true && r.j.discountPct === 15, r);
+r = await call('POST', '/api/promo/validate', CUST, { code: 'NOPE-404' });
+check('promo validate unknown -> invalid', r.status === 200 && r.j.valid === false, r);
+// apply: subtotal 840 -> discount 126 -> total 940-126 = 814
+const promoOrderBody = {
+  phone: '+251911000001', merchantId: 'sheger-kitchen',
+  items: [{ itemId: 'sk-doro-wot', qty: 2, injeraCount: 4, spice: 2 }],
+  subCity: 'Bole', sefer: 'Bole Medhanealem', landmarkText: 'Gate 2', paymentMethod: 'cod',
+  promoCode: 'AUDIT15', idempotencyKey: 'promo-1'
+};
+r = await call('POST', '/api/place-order', CUST, promoOrderBody);
+check('place-order applies promo discount', r.status === 200 && r.j.discount === 126 && r.j.total === 814, r.j);
+// reuse the same code until exhausted (max 2, one already used)
+r = await call('POST', '/api/place-order', CUST, { ...promoOrderBody, idempotencyKey: 'promo-2' });
+check('second use of promo still applies', r.status === 200 && r.j.discount === 126, r.j);
+r = await call('POST', '/api/place-order', CUST, { ...promoOrderBody, idempotencyKey: 'promo-3' });
+check('exhausted promo -> 400 invalid_promo', r.status === 400 && r.j.error === 'invalid_promo', r);
+// typo'd code must fail loudly, never silently drop the discount
+r = await call('POST', '/api/place-order', CUST, { ...promoOrderBody, promoCode: 'TYP0', idempotencyKey: 'promo-4' });
+check('unknown promo code -> 400 invalid_promo', r.status === 400 && r.j.error === 'invalid_promo', r);
 // real Chapa payload shape (event/data wrapper) must also verify
 const chapaRaw = JSON.stringify({ event: 'charge.success', data: { tx_ref: 'FT2589102X4', status: 'success' } });
 const chapaSig = await hmac.hmacHex(chapaRaw, 'demo-webhook-secret');
