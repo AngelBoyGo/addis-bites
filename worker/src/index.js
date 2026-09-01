@@ -15,7 +15,7 @@ import {
   footEarnings
 } from './shapes.js';
 import { signToken, verifyToken } from './auth.js';
-import { sendPayout, verifyWebhook, initializeChapaTx } from './provider.js';
+import { sendPayout, verifyWebhook, initializeChapaTx, sendTelegram } from './provider.js';
 import { hmacHex } from './hmac.js';
 
 // ---- D1 self-migration (single source for the tables the console routes
@@ -623,6 +623,12 @@ export default {
           }
         }
 
+        // Ops alert: new order landed (Telegram when configured).
+        ctx?.waitUntil?.(sendTelegram(env,
+          `🧾 <b>New order</b> <code>${orderData.id}</code>\n` +
+          `💰 ${orderData.total} ETB (${orderData.paymentMethod})\n` +
+          `📍 ${orderData.subCity} · ${orderData.sefer} — ${orderData.landmarkText}`));
+
         return new Response(JSON.stringify(orderData), { headers: corsHeaders });
       }
 
@@ -951,6 +957,7 @@ export default {
             env.DB.prepare(`UPDATE orders SET status = 'delivered', updated_at = ? WHERE id = ?`).bind(nowIso(), orderId),
             env.DB.prepare(`INSERT INTO pod_receipts (order_id, photo_b64, pin) VALUES (?, ?, ?)`).bind(orderId, photoB64, pin)
           ]);
+          ctx?.waitUntil?.(sendTelegram(env, `✅ <b>Delivered</b> <code>${orderId}</code> — POD recorded`));
           return new Response(JSON.stringify({ ok: true, status: 'delivered' }), { headers: corsHeaders });
         }
 
@@ -1508,6 +1515,9 @@ export default {
             orderRow.paymentStatus = 'confirmed';
             orderRow.paymentRef = orderRow.paymentRef || txRef;
           }
+        }
+        if (success) {
+          ctx?.waitUntil?.(sendTelegram(env, `💰 <b>Payment confirmed</b> <code>${orderRow.id}</code> — ready to prepare`));
         }
         return new Response(JSON.stringify({ ok: true, orderId: orderRow.id, paid: success }), { headers: corsHeaders });
       }
